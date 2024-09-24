@@ -16,6 +16,50 @@ class DataFile:
     
     def getDataRuns(self):
         return self.dataRuns
+
+    def sortDataRuns(self):
+        wSrc = []
+        woSrc = []
+        for run in self.dataRuns:
+            src = run.getSrc().lower()
+            if src == 'no':
+                woSrc.append(run)
+            elif 'sr' in src or 'cd' in src:
+                wSrc.append(run)
+
+        if wSrc:
+            wSrc_strips = []
+            
+            for run in wSrc:
+                wSrc_strips.append(run.getStrip())
+
+            wSrc_idxs = np.argsort(wSrc_strips)
+            self.srcRuns = np.array(wSrc)[wSrc_idxs]
+
+        if woSrc:
+            woSrc_strips = []        
+
+            for run in woSrc:
+                woSrc_strips.append(run.getStrip())
+
+            woSrc_idxs = np.argsort(woSrc_strips)
+            self.darkRuns = np.array(woSrc)[woSrc_idxs]
+
+    def getStripDist(self):
+        if self.srcRuns is None:
+            print('No runs with source recorded')
+            return
+        
+        strips = []
+        avgI = []
+        stderr = [] 
+
+        for run in self.srcRuns:
+            strips.append(run.getStrip())
+            avgI.append(run.getAvgCur())
+            stderr.append(run.getAvgStdErr())
+
+        return strips,avgI,stderr
     
     def createDataRun(self,mMData,mData):
         self.run+=1
