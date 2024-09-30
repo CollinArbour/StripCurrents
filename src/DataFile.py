@@ -7,6 +7,9 @@ class DataFile:
         self.name = name
         self.run = -1
         self.dataRuns = []
+
+        self.srcRuns = None
+        self.darkRuns = None
     
     def printRuns(self):
         to_return = ''
@@ -104,4 +107,3 @@ class DataFile:
                 
         if meta_data and run_data: 
             self.createDataRun(meta_data,np.array(run_data).T)
-    
