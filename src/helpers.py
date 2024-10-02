@@ -40,12 +40,28 @@ def FWHM(xs,ys):
     
     return x1,x2
 
+def intFWHM(ps,fwhm,pts=1000):
+    '''
+        Function should probably be phased out in favor of 'intRadius(...)'
+    '''
+    a0 = ps[0] / (np.sqrt(2*np.pi) * ps[1]) # Amplitude of first 2D Gaussian (nA/mm^2)
+    a1 = ps[3] / (np.sqrt(2*np.pi) * ps[4]) # Amplitude of second 2D Gaussian (nA/mm^2)
+    
+    r = (fwhm[1]-fwhm[0])/2
+    
+    G0,G0_err = integrate.quad(lambda x: Gauss(x,1,ps[1],0),-r,r)
+    G1,G1_err = integrate.quad(lambda x: Gauss(x,1,ps[4],0),-r,r)
+    
+    G2D = a0*G0**2 + a1*G1**2
+    
+    return G2D
+
 def intRadius(ps,r,pts=1000):
     a0 = ps[0] / (np.sqrt(2*np.pi) * ps[1]) # Amplitude of first 2D Gaussian (nA/mm^2)
     a1 = ps[3] / (np.sqrt(2*np.pi) * ps[4]) # Amplitude of second 2D Gaussian (nA/mm^2)
     
-    G0,G0_err = integrate.quad(lambda x: Gauss(x,1,p1[1],0),-r,r)
-    G1,G1_err = integrate.quad(lambda x: Gauss(x,1,p1[4],0),-r,r)
+    G0,G0_err = integrate.quad(lambda x: Gauss(x,1,ps[1],0),-r,r)
+    G1,G1_err = integrate.quad(lambda x: Gauss(x,1,ps[4],0),-r,r)
     
     G2D = a0*G0**2 + a1*G1**2
     
@@ -57,10 +73,10 @@ def mkScans(strips,ps,i,save=False):
     xfit = np.linspace(0,200,1000)
     yfit = mGaussianSum(xfit,ps[0],ps[1],ps[2],ps[3],ps[4],ps[5])
     fwhm = FWHM(xfit,yfit)
-    fwhmCharge = intFWHM(p1,fwhm)
+    fwhmCharge = intFWHM(ps,fwhm)
     
     plt.errorbar(strips[0],strips[1],yerr=strips[2],linestyle='--')
-    plt.plot(xfit,yfit,label=nms[i])
+    plt.plot(xfit,yfit) # ,label=nms[i]) <--- NEED TO ADAPT FUNCTION TO TAKE IN LABELS
 #     for x in fwhm:
 #         plt.axvline(x,linestyle=':',color='grey',alpha=0.5)
     
