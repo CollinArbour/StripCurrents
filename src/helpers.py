@@ -68,7 +68,10 @@ def intRadius(ps,r,pts=1000):
     return G2D
 
 def mkScans(strips,ps,i,save=False):
-    
+    '''
+    @arg:strips - [xpos,values,stderrs]
+    @arg:ps - []
+    '''
     # Producing line shape of fit
     xfit = np.linspace(0,200,1000)
     yfit = mGaussianSum(xfit,ps[0],ps[1],ps[2],ps[3],ps[4],ps[5])

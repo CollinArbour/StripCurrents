@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from .DataRun import *
 
 class DataFile:
-    def __init__(self,name):
+    def __init__(self,name):        #constructor
         self.name = name
         self.run = -1
         self.dataRuns = []
@@ -71,9 +71,9 @@ class DataFile:
         datRun.processDataRun(mData)
         self.dataRuns.append(datRun)
         
-    def parseDataFileText(self,flnm):
-        with open(flnm,'r') as fl:
-            textData = fl.readlines()
+    def parseDataFileText(self,flnm):           #open file(flnm)
+        with open(flnm,'r') as fl:              #renamed fl
+            textData = fl.readlines()           #create list of strings, each line
         
         # Initialize temp storage arrays
         meta_data = []
