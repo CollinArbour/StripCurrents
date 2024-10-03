@@ -11,6 +11,8 @@ class DataRun:
         return self.hv
     def getSrc(self):
         return self.src
+    def getHole(self):
+        return self.hole
     def getStrip(self):
         return self.strip
     
@@ -86,6 +88,15 @@ class DataRun:
         self.raw = True
     
     def processMetaData(self,mMData):
+        '''
+        Process the meta-data describing the Run conditions
+
+        Arguments:
+            @mMData : Array of strings corresponding to meta-data lines in text file
+
+        Notes:
+            meta-data should be properly formatted with underscores, but for now a safer more verbose processing is implemented
+        '''
         # Start processing Meta Data
         meta = mMData[1] + ':' + mMData[2]
         metaspl = meta.split(':')
@@ -101,11 +112,19 @@ class DataRun:
         except:
             self.strip = int(metaspl[1][1:])
             
-            
-        self.hv = int(metaspl[2].split('_')[-1])
-        self.src = metaspl[4].split('_')[-1]
-        self.hole = metaspl[5].split('_')[-1]
-#         self.hole = int(metaspl[5].split('_')[-1])
+        # Safely handle HV input
+        if '_' in metaspl[2]:
+            self.hv = int(metaspl[2].split('_')[-1])
+        else:
+            self.hv = int(metaspl[2][2:])
+        
+        # Safely handle Source input
+        if 'no' not in metaspl[4].lower():
+            self.src = metaspl[4].split('_')[-1]
+            self.hole = metaspl[5]
+        else:
+            self.src = 'NoSrc'
+            self.hole = 'N/A'
     
     
     def processDataRun(self,mData):
