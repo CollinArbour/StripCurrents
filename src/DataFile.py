@@ -135,7 +135,7 @@ class DataFile:
 
         return np.array(hvs),np.array(avgI),np.array(stderr)
 
-    def getStripDist(self):
+    def getStripScan(self):
         if self.srcRuns is None:
             print('No runs with source recorded')
             return

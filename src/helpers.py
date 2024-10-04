@@ -16,6 +16,9 @@ def Gauss(x, A, B, C):
 def mGaussianSum(x_vals,A0,B0,C0,A1,B1,C1):
     return Gauss(x_vals,A0,B0,C0) + Gauss(x_vals,A1,B1,C1)
 
+def mExp(x_vals,A,B):
+    return A*np.exp(B*x_vals)
+
 def m2DGaussian(x_vals,y_vals,A0,B0,C0,A1,B1,C1):
     return A0*Gauss(x_vals,1,B0,C0)*Gauss(y_vals,1,B0,C0) + A1*Gauss(x_vals,1,B1,C1)*Gauss(y_vals,1,B1,C1)
 
@@ -57,13 +60,19 @@ def intFWHM(ps,fwhm,pts=1000):
     return G2D
 
 def intRadius(ps,r,pts=1000):
-    a0 = ps[0] / (np.sqrt(2*np.pi) * ps[1]) # Amplitude of first 2D Gaussian (nA/mm^2)
-    a1 = ps[3] / (np.sqrt(2*np.pi) * ps[4]) # Amplitude of second 2D Gaussian (nA/mm^2)
+    '''
+    Integrates total current within area of circle r
+
+    Arguments:
+        @ps : parameters of sum of two 2D Gaussians [a0,sig0,0,a1,sig1,0]
+        @r  : Radius of circle to perform  integration over
+        @pts : Number of points to integrate over
+    '''
     
     G0,G0_err = integrate.quad(lambda x: Gauss(x,1,ps[1],0),-r,r)
     G1,G1_err = integrate.quad(lambda x: Gauss(x,1,ps[4],0),-r,r)
     
-    G2D = a0*G0**2 + a1*G1**2
+    G2D = ps[0]*G0**2 + ps[3]*G1**2
     
     return G2D
 
@@ -99,32 +108,57 @@ def mkScans(strips,ps,i,save=False):
 
 
 def mkHeatMap_GaussSum(r,ps,pts=1000,mlabel='',save=False):
-    a0 = ps[0] / (np.sqrt(2*np.pi) * ps[1]) # Amplitude of first 2D Gaussian (nA/mm^2)
-    a1 = ps[3] / (np.sqrt(2*np.pi) * ps[4]) # Amplitude of second 2D Gaussian (nA/mm^2)
+    '''
+    Makes heat map showing 2D distribution of current from source
+
+    Arguments:
+        @r : Distance from center point of source that map will cover
+        @ps : Parameters of fit to sum of two Gaussians
+        @pts : Number of points between -r and r to use when plotting
+        @mlabel : label
+    '''
+    sig0 = ps[1]
+    sig1 = ps[4]
+    a0 = ps[0] / (np.sqrt(2*np.pi) * sig0) # Amplitude of first 2D Gaussian (nA/mm^2)
+    a1 = ps[3] / (np.sqrt(2*np.pi) * sig1) # Amplitude of second 2D Gaussian (nA/mm^2)
     
     hmpts = np.linspace(-r,r,pts)
     hmxpts,hmypts = np.meshgrid(hmpts,hmpts)
     
-    G0x = Gauss(hmxpts,1,ps[1],0)
-    G0y = Gauss(hmypts,1,ps[1],0)
+    G0x = Gauss(hmxpts,1,sig0,0)
+    G0y = Gauss(hmypts,1,sig0,0)
     
-    G1x = Gauss(hmxpts,1,ps[4],0)
-    G1y = Gauss(hmypts,1,ps[4],0)
+    G1x = Gauss(hmxpts,1,sig1,0)
+    G1y = Gauss(hmypts,1,sig1,0)
     
     G = a0*G0x*G0y + a1*G1x*G1y
     
     hm = np.max(G) / 2
-    sig2 = ps[4] * 5
-    y_sig2 = mGaussianSum(sig2,ps[0],ps[1],ps[2],ps[3],ps[4],ps[5])
+
+    sig0_lvl = 5
+    sig0_lvl_xval = sig0 * sig0_lvl
+    sig0_lvl_yval = mGaussianSum(sig0_lvl_xval,a0,sig0,0,a1,sig1,0)
+
+    contour = plt.contour(hmxpts, hmypts, G, levels=[sig0_lvl_yval,hm], colors='white', linestyles='dashed', linewidths=2)
+    plt.clabel(contour, inline=True, fontsize=8, fmt={sig0_lvl_yval: f'{sig0_lvl}σ_0',hm: 'FWHM'})
+
+    sig0_lvl_totChrg = intRadius([a0,sig0,0,a1,sig1,0],sig0_lvl_xval)
+    sig0_lvl3_totChrg = intRadius([a0,sig0,0,a1,sig1,0],sig0*3)
+    sig0_lvl10_totChrg = intRadius([a0,sig0,0,a1,sig1,0],sig0*10)
     
-    contour = plt.contour(hmxpts, hmypts, G, levels=[y_sig2,hm], colors='white', linestyles='dashed', linewidths=2)
-    plt.clabel(contour, inline=True, fontsize=8, fmt={y_sig2: '5σ',hm: 'FWHM'})
-    
+    if np.max(G) > 1.5:
+        print('ERROR: Max is greater than upper limit in Heat Map')
+
     plt.imshow(G,origin='lower', cmap='viridis',extent=[-r,r,-r,r],vmin=0,vmax=1.5)
     
     plt.xlabel('X Position (mm)')
     plt.ylabel('Y Position (mm)')
     plt.title(f'Sum of 2D-Gaussians Fit {mlabel}')
+
+    xtxtpos = -41
+    ytxtpos = -41
+    plt.text(xtxtpos,ytxtpos,f'σ0: {sig0:0.2f}mm  σ1: {sig1:.2f}mm  FWHM: \nItot in 3*σ0= {sig0_lvl3_totChrg:.2f} nA\nItot in 5*σ0= {sig0_lvl_totChrg:.2f} nA\nItot in 10*σ0= {sig0_lvl10_totChrg:.2f} nA',bbox=dict(facecolor='grey',alpha=1))
+    #plt.text(xtxtpos,ytxtpos,f'r=5σ_0={sig:.2f} mm \nItot: {chrg_sig:.2f} nA',bbox=dict(facecolor='grey',alpha=0.75))
     
     cbar = plt.colorbar()  # Create a colorbar
     cbar.set_label('Current Density (nA/mm^2)', rotation=270, labelpad=15)
