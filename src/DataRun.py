@@ -2,8 +2,34 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 class DataRun:
+    '''
+        This class is used within dataFile.py to create an object for each data run.
+        The constructor takes a run name as input, and utilizes methods to declare all other member variables.
+    '''
     def __init__(self,name):
         self.name = name
+        #defined in processMetaData()
+        self.hv = None                  #high voltage
+        self.src = None                 #source
+        self.strip = None               #strip
+        self.layer = None               #layer
+        #defined in processDataRun()
+        self.vals = None                #np array of values of current
+        self.timeBins = None            #np array of estimated points in time of recorded data
+        self.date = None                #date of run
+        self.startRun = None            #starting time of run(seconds)
+        self.stopRun = None             #ending time
+        #defined in characterize()
+        self.avgCur = None              #average of current values
+        self.stdCur = None              #standard deviation of current
+        self.avgStdErr = None           #standard error 
+        self.nPoints = None             #number of data points(length of vals)
+        #defined in removeOutliers()
+        self.nRemovedPoints = None      #number of outlier points that were removed
+        self.raw = None                 #bool of whether outliers have been removed(raw = before)
+        self.valsRaw = None             #storage of data before removal of outliers
+        self.timeBinsRaw = None         #storage of time points before removal of outliers
+        
     
     def getName(self):
         return self.name
@@ -51,36 +77,50 @@ class DataRun:
         self.avgStdErr = self.avgCur/np.sqrt(self.nPoints)
         
     def removeOutliers(self,xIQR=1.5):
+        '''
+            Automatically called in processDataRun(),
+            Removes outliers from the data by setting an upper limit and a lower limit.
+            provides functionality to save the raw data, and recalculates characterize()
+            Arguments:
+              @xIQR: optional parameter to set the multiplier for calculating outlier values
+        '''
+        #check if outliers already removed
         if not self.raw:
             print('Already removed outliers')
             return
-        
-        p75 = np.quantile(self.vals,0.75)
+        #first and third quartiles
         p25 = np.quantile(self.vals,0.25)
+        p75 = np.quantile(self.vals,0.75)
 
+        #middle 50%
         IQR = p75-p25
 
+        #upper and lower limits for data
         uplim = p75 + (xIQR * IQR)
         dolim = p25 - (xIQR * IQR)
 
-        upmask = self.vals < uplim
-        domask = self.vals > dolim
+        #bool array of whether values fall within the upper and lower limits
+        mmask = (self.vals < uplim) & (self.vals > dolim)
 
-        mmask = upmask * domask
-        
+        #(num of points before) - (num of points after)
         self.nRemovedPoints = self.nPoints - sum(mmask)
         
         # Store Raw Data
         self.valsRaw = self.vals
         self.timeBinsRaw = self.timeBins
 
+        # only saves to val if corresponding mmask element equals 'True'
         self.vals = self.vals[mmask]
         self.timeBins = self.timeBins[mmask]
         
+        #redefines characterize variables and sets whether data is raw to 'false'
         self.characterize()
         self.raw = False
     
     def revertToRaw(self):
+        '''
+            Reverts data to before removeOutliers()
+        '''
         self.vals = self.valsRaw
         self.timeBins = self.timeBinsRaw
         
@@ -97,28 +137,29 @@ class DataRun:
         Notes:
             meta-data should be properly formatted with underscores, but for now a safer more verbose processing is implemented
         '''
-        # Start processing Meta Data
+        #grabs meta data and splits it into a list
+        #Ex:['L1', 'S1', 'HV_3600', 'Imon_1.2', 'src_Sr', 'h_02']
         meta = mMData[1] + ':' + mMData[2]
         metaspl = meta.split(':')
         
+        #try-except blocks to catch improper formatting
         try:
             self.layer = int(metaspl[0].split('_')[-1])
+
         except:
             self.layer = int(metaspl[0][1:])
         
-        # Get strip number, convention changed and I am employing this safety strategy
         try:
             self.strip = int(metaspl[1].split('_')[-1])
         except:
             self.strip = int(metaspl[1][1:])
             
-        # Safely handle HV input
         if '_' in metaspl[2]:
             self.hv = int(metaspl[2].split('_')[-1])
         else:
             self.hv = int(metaspl[2][2:])
         
-        # Safely handle Source input
+        #check for source, assign src and hole accordingly
         if 'no' not in metaspl[4].lower():
             self.src = metaspl[4].split('_')[-1]
             self.hole = metaspl[5]
@@ -128,6 +169,19 @@ class DataRun:
     
     
     def processDataRun(self,mData):
+        '''
+            Takes list of processed data and assigns member variables respective values,
+            also using helper function characterize()
+
+            Arguments:
+                @mData: list containing data for each value
+
+            Notes:
+                mData parameter should be as such:
+                    -mData[0] is list of dates when value is recorded
+                    -mData[1] is list of times when value is recorded
+                    -mData[2] is list of actual values of current   
+        '''
         
         # Store Current readings
         self.vals = np.array(mData[2],dtype=float)
@@ -139,7 +193,7 @@ class DataRun:
         self.startRun = np.array(mData[1][0].split(':'),dtype=int)
         self.stopRun = np.array(mData[1][-1].split(':'),dtype=int)
         
-        # Determine the time bins
+        # np array of estimated points in time of recorded data
         self.timeBins = np.linspace(0,self.getDuration(),num=len(self.vals))
         
         self.removeOutliers()
@@ -147,6 +201,13 @@ class DataRun:
     
     
     def plotDataRun(self,save=False):
+        '''
+            Plots the current values over time.
+
+            Arguments:
+            @save: optional parameter to save the plot as a png within this directory
+
+        '''
         # Determine where to place label in plot
         min_current = np.min(self.vals)
         max_current = np.max(self.vals)
