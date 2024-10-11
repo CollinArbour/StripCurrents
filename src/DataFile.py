@@ -3,6 +3,10 @@ import matplotlib.pyplot as plt
 from .DataRun import *
 
 class DataFile:
+    '''
+    This class creates functionality for opening and parsing data files, and interacting with the run data and meta data.
+    specific info about each run is stored within dataRun objects, which are held in the self.dataRuns list
+    '''
     def __init__(self,name):        #constructor
         self.name = name
         self.run = -1
@@ -55,7 +59,7 @@ class DataFile:
 
     def sortDataRuns(self,sort):
         '''
-        Sorts Data runs in a useful manner
+        Sorts Data runs in a useful manner, currently supporting strip or hv
 
         To Do:
             [ ] Take arguments that describe condition of sorting preferred
@@ -63,6 +67,7 @@ class DataFile:
             [ ] Create a data member sort used
             [ ] Reduce coding redundancies (move sorting out of methods?)
         '''
+        #Checks for valid sorting option
         Sorts = ['strip', 'hv']
         if sort not in Sorts:
             print(f'Sort option "{sort}" not supported')
@@ -85,8 +90,8 @@ class DataFile:
                 wSrc_strips = []
                 for run in wSrc:
                     wSrc_strips.append(run.getStrip())
-                wSrc_idxs = np.argsort(wSrc_strips)
-                self.srcRuns = np.array(wSrc)[wSrc_idxs]
+                wSrc_idxs = np.argsort(wSrc_strips)         #array of indexes that the values will be taken from
+                self.srcRuns = np.array(wSrc)[wSrc_idxs]    #takes the index array and sorts accordingly
             if woSrc:
                 woSrc_strips = []        
                 for run in woSrc:
@@ -123,6 +128,12 @@ class DataFile:
             print(f'\t\t\tSrc: {run.getSrc()} \t Hole: {run.getHole()}')
 
     def getHVScan(self,src=True):
+        '''
+        Returns 3 numpy arrays of hvs, avg current, and standard error
+
+        Notes:
+            Must be ran after sortDataRuns?
+        '''
         hvs = []
         avgI = []
         stderr = []
@@ -136,6 +147,9 @@ class DataFile:
         return np.array(hvs),np.array(avgI),np.array(stderr)
 
     def getStripScan(self):
+        '''
+        Returns three arrays of strips, avg current, and standard error
+        '''
         if self.srcRuns is None:
             print('No runs with source recorded')
             return
@@ -152,15 +166,32 @@ class DataFile:
         return strips,avgI,stderr
     
     def createDataRun(self,mMData,mData):
+        '''
+            Creates dataRun objects, processess the data and meta data, and adds all dataRun objs to the self.dataRuns list
+            
+            Arguments:
+                @mMdata: list of meta data
+                @mData: run data
+
+            Notes:
+                This function is a helper function for parseDataFileText()
+        '''
         self.run+=1
         datRun = DataRun(f'Run0{self.run}')
         datRun.processMetaData(mMData)
         datRun.processDataRun(mData)
         self.dataRuns.append(datRun)
         
-    def parseDataFileText(self,flnm):           #open file(flnm)
-        with open(flnm,'r') as fl:              #renamed fl
-            textData = fl.readlines()           #create list of strings, each line
+    def parseDataFileText(self,flnm):
+        '''
+        This method opens a file, loops through each line, and stores the run data and meta data.
+
+        Arguments:
+            @flnm: the relative path of the file that is being read 
+        '''
+        #opens file and creates string array of every line           
+        with open(flnm,'r') as fl:              
+            textData = fl.readlines()           
         
         # Initialize temp storage arrays
         meta_data = []
@@ -174,20 +205,24 @@ class DataFile:
 
                 # If a previous data run has been recorded
                 # Cache it before clearing and beginning new collection
+                # Should execute every for loop iteration except the first
                 if meta_data and run_data: 
-                    self.createDataRun(meta_data,np.array(run_data).T)
+                    self.createDataRun(meta_data,np.array(run_data).T)      #.T to group same data types together
                 
                 meta_data = []
                 run_data = []
-                meta_idxs = [i+1,i+6]
+                meta_idxs = [i+1,i+6]       #holds line number(indexes) of all meta data lines
 
+                #skips if statements and immediately starts next iteration
                 continue
 
             # Store Meta Data
+            # Only executes if it is within the index range determined above
             if meta_idxs and i <= meta_idxs[1] and i >= meta_idxs[0]:
                 meta_data.append(line.rstrip())
 
             # Store numerical Data
+            # Only executes if it is in the indexes after the meta_data(the actual run data) 
             if meta_idxs and i > meta_idxs[1]:
                 vals = line.split()
                 run_data.append(vals)

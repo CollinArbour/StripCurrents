@@ -6,23 +6,32 @@ import scipy.integrate as integrate
 ## Functions
 def Gauss(x, A, B, C):
     '''
-        A - Amplitude
-        B - Standard Deviation
-        C - Center of Distribution
+        Returns a gaussian function given statistical info
+        
+        Arguments:
+            @x: Independent variable values
+            @A: Amplitude
+            @B: Standard Deviation
+            @C: Center of Distribution
     '''
     y = A*np.exp(-1/2*((x-C)/B)**2)
     return y
 
 def mGaussianSum(x_vals,A0,B0,C0,A1,B1,C1):
+    '''Create two Gaussian functions and Combine them'''
     return Gauss(x_vals,A0,B0,C0) + Gauss(x_vals,A1,B1,C1)
 
 def mExp(x_vals,A,B):
+    '''Return exponential '''
+    #A*e^x
     return A*np.exp(B*x_vals)
 
 def m2DGaussian(x_vals,y_vals,A0,B0,C0,A1,B1,C1):
+    '''Creates two 2d gaussians and combines them'''
     return A0*Gauss(x_vals,1,B0,C0)*Gauss(y_vals,1,B0,C0) + A1*Gauss(x_vals,1,B1,C1)*Gauss(y_vals,1,B1,C1)
 
 def FWHM(xs,ys):
+    '''Returns the x-values of which the full width half max lies'''
     hm = np.max(ys)/2
     x1 = 0
     x1d = 100
@@ -121,7 +130,7 @@ def mkHeatMap_GaussSum(r,ps,pts=1000,mlabel='',save=False):
     sig1 = ps[4]
     a0 = ps[0] / (np.sqrt(2*np.pi) * sig0) # Amplitude of first 2D Gaussian (nA/mm^2)
     a1 = ps[3] / (np.sqrt(2*np.pi) * sig1) # Amplitude of second 2D Gaussian (nA/mm^2)
-    
+    #creates grid
     hmpts = np.linspace(-r,r,pts)
     hmxpts,hmypts = np.meshgrid(hmpts,hmpts)
     
