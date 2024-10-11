@@ -87,7 +87,7 @@ def mkScans(strips,ps,i,save=False):
     fwhm = FWHM(xfit,yfit)
     fwhmCharge = intFWHM(ps,fwhm)
     
-    plt.errorbar(strips[0],strips[1],yerr=strips[2],linestyle='--')
+    plt.errorbar(strips[0],strips[1],yerr=strips[2],linestyle='',marker='.')
     plt.plot(xfit,yfit) # ,label=nms[i]) <--- NEED TO ADAPT FUNCTION TO TAKE IN LABELS
 #     for x in fwhm:
 #         plt.axvline(x,linestyle=':',color='grey',alpha=0.5)
@@ -139,12 +139,16 @@ def mkHeatMap_GaussSum(r,ps,pts=1000,mlabel='',save=False):
     sig0_lvl_xval = sig0 * sig0_lvl
     sig0_lvl_yval = mGaussianSum(sig0_lvl_xval,a0,sig0,0,a1,sig1,0)
 
-    contour = plt.contour(hmxpts, hmypts, G, levels=[sig0_lvl_yval,hm], colors='white', linestyles='dashed', linewidths=2)
-    plt.clabel(contour, inline=True, fontsize=8, fmt={sig0_lvl_yval: f'{sig0_lvl}σ_0',hm: 'FWHM'})
+    sig0_lvl01 = 3
+    sig0_lvl_xval01 = sig0 * sig0_lvl01
+    sig0_lvl_yval01 = mGaussianSum(sig0_lvl_xval01,a0,sig0,0,a1,sig1,0)
+
+    contour = plt.contour(hmxpts, hmypts, G, levels=[sig0_lvl_yval,sig0_lvl_yval01,hm], colors='white', linestyles='dashed', linewidths=2)
+    plt.clabel(contour, inline=True, fontsize=8, fmt={sig0_lvl_yval: f'{sig0_lvl}σ_0',sig0_lvl_yval01: f'{sig0_lvl01}σ_0',hm: 'FWHM'})
 
     sig0_lvl_totChrg = intRadius([a0,sig0,0,a1,sig1,0],sig0_lvl_xval)
-    sig0_lvl3_totChrg = intRadius([a0,sig0,0,a1,sig1,0],sig0*3)
-    sig0_lvl10_totChrg = intRadius([a0,sig0,0,a1,sig1,0],sig0*10)
+    sig0_lvl3_totChrg = intRadius([a0,sig0,0,a1,sig1,0],sig0_lvl_xval01)
+    #sig0_lvl10_totChrg = intRadius([a0,sig0,0,a1,sig1,0],sig0*10)
     
     if np.max(G) > 1.5:
         print('ERROR: Max is greater than upper limit in Heat Map')
@@ -155,9 +159,9 @@ def mkHeatMap_GaussSum(r,ps,pts=1000,mlabel='',save=False):
     plt.ylabel('Y Position (mm)')
     plt.title(f'Sum of 2D-Gaussians Fit {mlabel}')
 
-    xtxtpos = -41
+    xtxtpos = -5
     ytxtpos = -41
-    plt.text(xtxtpos,ytxtpos,f'σ0: {sig0:0.2f}mm  σ1: {sig1:.2f}mm  FWHM: \nItot in 3*σ0= {sig0_lvl3_totChrg:.2f} nA\nItot in 5*σ0= {sig0_lvl_totChrg:.2f} nA\nItot in 10*σ0= {sig0_lvl10_totChrg:.2f} nA',bbox=dict(facecolor='grey',alpha=1))
+    plt.text(xtxtpos,ytxtpos,f'σ0: {sig0:0.2f}mm  σ1: {sig1:.2f}mm \nItot in 3*σ0= {sig0_lvl3_totChrg:.2f} nA\nItot in 5*σ0= {sig0_lvl_totChrg:.2f} nA',bbox=dict(facecolor='grey',alpha=1))
     #plt.text(xtxtpos,ytxtpos,f'r=5σ_0={sig:.2f} mm \nItot: {chrg_sig:.2f} nA',bbox=dict(facecolor='grey',alpha=0.75))
     
     cbar = plt.colorbar()  # Create a colorbar
