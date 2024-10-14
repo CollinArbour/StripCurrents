@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.integrate as integrate
+from scipy.optimize import curve_fit
 
 
 ## Functions
@@ -178,3 +179,200 @@ def mkHeatMap_GaussSum(r,ps,pts=1000,mlabel='',save=False):
         plt.close()
     else:
         plt.show()
+
+def mkRawFittedPlot(mscan_list, strip, plot=True):
+    '''
+        This Function serves 2 Purposes:
+            -Plots raw fitted graph
+            -Returns p1 parameter list
+                - p1 is necessary to run mkSpaceChargePlot
+
+        Arguments: 
+            mscan_list: list that includes HV points, Corrected Avg current points, And stderr. this is just mhvscan in mkHVScanPlot.
+            strip: which strip is being irradiated, for graph labeling
+            plot: determines whether to generate the plot, or just return p1.
+
+    '''
+    print('\tPerforming fit')
+    strt_fit = np.where(mscan_list[0]==3000)[0][0]
+    stop_fit = np.where(mscan_list[0]==3550)[0][0]+1
+    p0 = [0.001,0.01]
+    p1,cov = curve_fit(mExp, mscan_list[0][strt_fit:stop_fit], mscan_list[1][strt_fit:stop_fit],p0)
+    if plot:
+        xs = np.linspace(0,3850,2000)
+        ys = mExp(xs,p1[0],p1[1])
+
+        # Create raw figure
+        print('\tCreating raw figure')
+        plt.errorbar(mscan_list[0],mscan_list[1],yerr=mscan_list[2],marker='.',linestyle='')
+        plt.plot(xs,ys)
+
+        plt.axvline(mscan_list[0][strt_fit],color='grey',alpha=0.3,linestyle='--')
+        plt.axvline(mscan_list[0][stop_fit],color='grey',alpha=0.3,linestyle='--')
+
+        plt.title(f'{strip} Strip Current over HV Scan')
+        plt.xlabel('HV (V)')
+        plt.ylabel('Avg. I (nA)')
+
+        plt.savefig(f'./plots/HV_Scans/{strip}_RawFitted.png',format='png',dpi=400)
+        plt.close()
+    return p1
+
+def mkPlateauPlot(mscan_list, strip, src,**kwargs):       
+    '''
+        This function produces a graph of the plateau, including error bars and a linear fit. 
+        It also calculates the average value of the plateau and labels it.
+
+        Arguments:
+            mscan_list: list that includes HV points, Corrected Avg current points, And stderr. this is just mhvscan in mkHVScanPlot.
+            strip: which strip is being irradiated, for graph labeling
+            src: source used during measurements, for graph labeling
+
+        Optional Arguments:
+            num_calcs: number of times to perform a mean current calculation. currently not implemented.
+            start_point: starting hv value, defaulted to zero
+            exclude_start: whether or not to exclude the first point(mainly to exclude the 0V run). should probably be changed to false if modifying start_point.
+            end_point: ending hv value, defaulted to 500.
+            lim args: to manually change the zoom on the graph
+            
+            uncorrected_curr: takes in the src_hvscan in mkHVScanPlot to graph the uncorrected source current
+            uncorrected_dark_curr: takes in the drk_hvscan in mkHVScanPlot to graph the uncorrected source current
+                -NOTE: for this and the parameter above it:
+                    -index 0 holds the HV (x-axis) values
+                    -index 1 holds the Current (y-axis) values
+
+        TODO:
+            -implement the num_calcs feature
+                -iterative system to calculate plateau mean across different ranges, and label the value
+                    -more parameters needed for range points
+    '''
+    defaults = {
+        '''
+            This Dictionary holds more parameters(all optional) using the kwargs feature of python.
+            Access values like any other Dictionary
+                -EX: var = defaults['num_calcs']
+            When calling the function, these parameters can be changed the same way as any others. 
+        '''
+        #optional parameters
+        'num_calcs': 1,             #number of mean calculations to do.yet to be implemented, so keep at 1.
+        'start_point': 0,           #(V), starting point in data run.
+        'exclude_start' : True,     #exludes starting point of data(intended to remove zero)
+        'end_point': 500,           #(V), ending point in data
+        #change scale of graph image
+        'x_low_lim': None,          
+        'x_upper_lim': None,
+        'y_lower_lim': None,
+        'y_upper_lim': None,
+        #to graph pre-corrected src and dark values
+        'uncorrected_curr': None,
+        'uncorrected_dark_curr': None
+    }
+    #set parameters in
+    defaults.update(kwargs)
+    
+    #notify user of plateau figure creation
+    print("Creating Plateau Figure")
+    
+    #Starting and ending fit points
+    strt_fit = np.where(mscan_list[0] == defaults['start_point'])[0][0]   
+    stop_fit = np.where(mscan_list[0] == defaults['end_point'])[0][0] + 1  #+1 to include point
+
+    #add one to exclude starting point
+    strt_fit += 1 if defaults['exclude_start'] == True else None
+
+    #grab list of plateau avg curr vals 
+    plateau_vals = mscan_list[1][strt_fit:stop_fit]
+    plateau_mean = np.mean(plateau_vals)
+
+    #grab x and y values of points
+    x_vals = mscan_list[0][strt_fit:stop_fit]
+    y_vals = mscan_list[1][strt_fit:stop_fit]
+
+    #plot value points with errorbars
+    plt.errorbar(x_vals, y_vals, yerr=mscan_list[2][strt_fit:stop_fit], marker='.', linestyle='', label='Corrected Avg Current')
+
+    
+    if (defaults['uncorrected_curr'] is not None) and (defaults['uncorrected_dark_curr'] is not None):
+        
+        #grab x and y values of uncorrected source points
+        x_uncorrected = defaults['uncorrected_curr'][0][strt_fit:stop_fit]      #first bracket accesses defaults dict value, 2nd bracket accesses HV values(for x-axis), 3rd bracket accesses what range of values are needed
+        y_uncorrected = defaults['uncorrected_curr'][1][strt_fit:stop_fit]      #first bracket accesses defaults dict value, 2nd bracket accesses Avg Curr values(for y-axis), 3rd bracket accesses what range of values are needed
+
+        #grab x and y values of uncorrected dark points
+        x_uncorrected_dark = defaults['uncorrected_dark_curr'][0][strt_fit:stop_fit]        #Check comments above^^
+        y_uncorrected_dark = defaults['uncorrected_dark_curr'][1][strt_fit:stop_fit]        #Check comments above^^
+
+        #plot uncorrected src and drk dat points
+        plt.errorbar(x_uncorrected, y_uncorrected, yerr = defaults['uncorrected_curr'][2][strt_fit:stop_fit], marker='.', linestyle='', color='green', label='Uncorrected Src Avg Current')
+        plt.errorbar(x_uncorrected_dark, y_uncorrected_dark, yerr = defaults['uncorrected_dark_curr'][2][strt_fit:stop_fit], marker='.',linestyle='', color='orange', label='Uncorrected Dark Avg Current')
+
+    #add text showing the mean of the plateau
+    #TODO: Fix voltage range displayed to not be manually entered, and also work when excluded first point.
+    plt.text(0.02, 0.98, verticalalignment='top',horizontalalignment='left', bbox=dict(facecolor='lightblue', alpha=0.5), transform=plt.gca().transAxes, s=f'{mscan_list[0][strt_fit]:.0f}V-{mscan_list[0][stop_fit]:.0f}V: {plateau_mean:.4f} nA', fontweight='bold', color='blue')
+    
+    #calculate linear fit
+    slope, intercept = np.polyfit(x_vals, y_vals, 1)
+    fit_line = slope * x_vals + intercept
+
+    #plot linear fit
+    plt.scatter(x_vals, y_vals)
+    plt.plot(x_vals, fit_line, color='red')
+
+    #manually change zoom of graph, automatically done if passed all "None" values
+    plt.xlim(defaults['x_low_lim'], defaults['x_upper_lim'])
+    plt.ylim(defaults['y_lower_lim'], defaults['y_upper_lim'])
+
+    #add text of Linear Fit Function
+    plt.text(0.02, 0.9, verticalalignment='top', horizontalalignment='left', bbox=dict(facecolor='lightblue', alpha=0.5), transform=plt.gca().transAxes, s=f'y = {slope:.2e} * x + {intercept:.2e}', fontweight='bold', color='black')
+
+    #label and title plot, save and close
+    plt.title(f'{strip} Strip Current over HV Scan of Plateau, Source: {src}')
+    plt.xlabel('HV (V)')
+    plt.ylabel('Avg. I (nA)')
+    plt.legend()
+    plt.savefig(f'./plots/HV_Scans/{strip}_src{src}_plateau.png', format='png', dpi=400)
+    plt.close()
+
+def mkSpaceChargePlot(mscan_list, strip, p1):
+    '''
+        Creates Space Charge graph ****needs more explanation
+
+        Arguments:
+            mscan_list: list that includes HV points, Corrected Avg current points, And stderr. this is just mhvscan in mkHVScanPlot.
+            strip: which strip is being irradiated, for graph labeling
+            p1: set of parameter values
+                -THIS IS RETRIEVED FROM mkRawFittedPlot(). that code will return p1 AND print a graph. if no graph is needed, pass it plot=False in the function call
+    '''
+    fig, (ax0, ax1) = plt.subplots(2, 1, gridspec_kw={'height_ratios': [4, 3]}, sharex=True)
+    fig.subplots_adjust(hspace=0)
+
+    xs = np.linspace(3000, 3850, 1500)
+    ys = mExp(xs, p1[0], p1[1])
+
+    strt_fit = np.where(mscan_list[0] == 3000)[0][0]
+    stop_fit = np.where(mscan_list[0] == 3550)[0][0] + 1
+
+    print('\tCreating Space Charge evaluation')
+    ax0.errorbar(mscan_list[0][strt_fit:],mscan_list[1][strt_fit:],yerr=mscan_list[2][strt_fit:],marker='.',linestyle='')
+    ax0.plot(xs,ys)
+    ax0.set_yscale('symlog')
+    ax0.set_title(f'{strip} Strip Current over HV Scan')
+    ax0.set_ylabel('Avg. I (nA)')
+
+    yexpect = mExp(mscan_list[0][strt_fit:],p1[0],p1[1])
+    diff = yexpect - mscan_list[1][strt_fit:]
+    rel_diff = diff / mscan_list[1][strt_fit:]
+
+    ax1.plot(mscan_list[0][strt_fit:],rel_diff)
+    ax1.set_xlabel('HV (V)')
+    ax1.set_ylabel('(Exp-Data)/Data')
+
+    ax0.axvline(mscan_list[0][strt_fit],color='grey',alpha=0.3,linestyle='--')
+    ax0.axvline(mscan_list[0][stop_fit],color='grey',alpha=0.3,linestyle='--')
+    ax1.axvline(mscan_list[0][strt_fit],color='grey',alpha=0.3,linestyle='--')
+    ax1.axvline(mscan_list[0][stop_fit],color='grey',alpha=0.3,linestyle='--')
+    ax1.axhline(0,color='black',alpha=0.5,linestyle=':')
+
+    plt.savefig(f'./plots/HV_Scans/{strip}_SpaceCharge.png',format='png',dpi=400)
+    plt.close()
+

@@ -22,7 +22,11 @@ class DataFile:
         print(to_return)
     
     def getDataRuns(self):
+
         return self.dataRuns
+    
+    def getFileSrc(self):
+        return self.dataRuns[3].getSrc()
 
     def filterRuns(self,use):
         '''
@@ -116,16 +120,18 @@ class DataFile:
 
     def describe(self):
         print(self.name)
-        print('\tWith Source:')
-        for run in self.srcRuns:
-            print(f'\t\tRun: {run.getName()}')
-            print(f'\t\t\tHV: {run.getHV()} V \t Strip: {run.getStrip()}')
-            print(f'\t\t\tSrc: {run.getSrc()} \t Hole: {run.getHole()}')
-        print('\tWith Out Source:')
-        for run in self.darkRuns:
-            print(f'\t\tRun: {run.getName()}')
-            print(f'\t\t\tHV: {run.getHV()} V \t Strip: {run.getStrip()}')
-            print(f'\t\t\tSrc: {run.getSrc()} \t Hole: {run.getHole()}')
+        if (self.srcRuns is not None):
+            print('\tWith Source:')
+            for run in self.srcRuns:
+                print(f'\t\tRun: {run.getName()}')
+                print(f'\t\t\tHV: {run.getHV()} V \t Strip: {run.getStrip()}')
+                print(f'\t\t\tSrc: {run.getSrc()} \t Hole: {run.getHole()}')
+        if (self.darkRuns is not None):
+            print('\tWith Out Source:')
+            for run in self.darkRuns:
+                print(f'\t\tRun: {run.getName()}')
+                print(f'\t\t\tHV: {run.getHV()} V \t Strip: {run.getStrip()}')
+                print(f'\t\t\tSrc: {run.getSrc()} \t Hole: {run.getHole()}')
 
     def getHVScan(self,src=True):
         '''
