@@ -71,8 +71,8 @@ for run_nm in run_nms:
     p1 = hp.mkRawFittedPlot(mhvscan, strip)
 
     #create plateau graph
-    sdf.describe()
-    ddf.describe()
+    
+    
     hp.mkPlateauPlot(mhvscan, strip, src, end_point=500, uncorrected_curr=src_hvscan, uncorrected_dark_curr=drk_hvscan, y_upper_lim=0.003)
 
     #create space charge plot
