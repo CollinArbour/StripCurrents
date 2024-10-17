@@ -180,7 +180,7 @@ def mkHeatMap_GaussSum(r,ps,pts=1000,mlabel='',save=False):
     else:
         plt.show()
 
-def mkRawFittedPlot(mscan_list, strip, plot=True):
+def mkRawFittedPlot(mscan_list, strip, plot=True, start_volt=3000, end_volt=3550):
     '''
         This Function serves 2 Purposes:
             -Plots raw fitted graph
@@ -193,9 +193,9 @@ def mkRawFittedPlot(mscan_list, strip, plot=True):
             plot: determines whether to generate the plot, or just return p1.
 
     '''
-    print('\tPerforming fit')
-    strt_fit = np.where(mscan_list[0]==3000)[0][0]
-    stop_fit = np.where(mscan_list[0]==3550)[0][0]+1
+    print('\n\tPerforming fit')
+    strt_fit = np.where(mscan_list[0]==start_volt)[0][0]
+    stop_fit = np.where(mscan_list[0]==end_volt)[0][0]+1
     p0 = [0.001,0.01]
     p1,cov = curve_fit(mExp, mscan_list[0][strt_fit:stop_fit], mscan_list[1][strt_fit:stop_fit],p0)
     if plot:
@@ -218,7 +218,7 @@ def mkRawFittedPlot(mscan_list, strip, plot=True):
         plt.close()
     return p1
 
-def mkPlateauPlot(mscan_list, strip, src,**kwargs):       
+def mkPlateauPlot(mscan_list, strip, src, hole, **kwargs):       
     '''
         This function produces a graph of the plateau, including error bars and a linear fit. 
         It also calculates the average value of the plateau and labels it.
@@ -302,12 +302,15 @@ def mkPlateauPlot(mscan_list, strip, src,**kwargs):
         x_uncorrected_dark = defaults['uncorrected_dark_curr'][0][strt_fit:stop_fit]        #Check comments above^^
         y_uncorrected_dark = defaults['uncorrected_dark_curr'][1][strt_fit:stop_fit]        #Check comments above^^
 
+        #grab the standard error of the uncorrected runs for the errorbars
+        src_bar_yerr = abs(defaults['uncorrected_curr'][2][strt_fit:stop_fit])
+        drk_bar_yerr = abs(defaults['uncorrected_dark_curr'][2][strt_fit:stop_fit])
+
         #plot uncorrected src and drk dat points
-        plt.errorbar(x_uncorrected, y_uncorrected, yerr = defaults['uncorrected_curr'][2][strt_fit:stop_fit], marker='.', linestyle='', color='green', label='Uncorrected Src Avg Current')
-        plt.errorbar(x_uncorrected_dark, y_uncorrected_dark, yerr = defaults['uncorrected_dark_curr'][2][strt_fit:stop_fit], marker='.',linestyle='', color='orange', label='Uncorrected Dark Avg Current')
+        plt.errorbar(x_uncorrected, y_uncorrected, yerr = src_bar_yerr, marker='.', linestyle='', color='green', label='Uncorrected Src Avg Current')
+        plt.errorbar(x_uncorrected_dark, y_uncorrected_dark, yerr = drk_bar_yerr, marker='.',linestyle='', color='orange', label='Uncorrected Dark Avg Current')
 
     #add text showing the mean of the plateau
-    #TODO: Fix voltage range displayed to not be manually entered, and also work when excluded first point.
     plt.text(0.02, 0.98, verticalalignment='top',horizontalalignment='left', bbox=dict(facecolor='lightblue', alpha=0.5), transform=plt.gca().transAxes, s=f'{mscan_list[0][strt_fit]:.0f}V-{mscan_list[0][stop_fit]:.0f}V: {plateau_mean:.4f} nA', fontweight='bold', color='blue')
     
     #calculate linear fit
@@ -326,14 +329,14 @@ def mkPlateauPlot(mscan_list, strip, src,**kwargs):
     plt.text(0.02, 0.9, verticalalignment='top', horizontalalignment='left', bbox=dict(facecolor='lightblue', alpha=0.5), transform=plt.gca().transAxes, s=f'y = {slope:.2e} * x + {intercept:.2e}', fontweight='bold', color='black')
 
     #label and title plot, save and close
-    plt.title(f'{strip} Strip Current over HV Scan of Plateau, Source: {src}')
+    plt.title(f'MiniCSC4: HV Scan, L1, 90{src}-Src1, {hole.replace("_", "").replace("0","").upper()}, {strip}')
     plt.xlabel('HV (V)')
     plt.ylabel('Avg. I (nA)')
     plt.legend()
     plt.savefig(f'./plots/HV_Scans/{strip}_src{src}_plateau.png', format='png', dpi=400)
     plt.close()
 
-def mkSpaceChargePlot(mscan_list, strip, p1):
+def mkSpaceChargePlot(mscan_list, strip, p1, start_volt=3000, end_volt=3550):
     '''
         Creates Space Charge graph ****needs more explanation
 
@@ -342,6 +345,7 @@ def mkSpaceChargePlot(mscan_list, strip, p1):
             strip: which strip is being irradiated, for graph labeling
             p1: set of parameter values
                 -THIS IS RETRIEVED FROM mkRawFittedPlot(). that code will return p1 AND print a graph. if no graph is needed, pass it plot=False in the function call
+                -Limitation: Must use the same start and end voltages as the mkRawFittedPlot. 
     '''
     fig, (ax0, ax1) = plt.subplots(2, 1, gridspec_kw={'height_ratios': [4, 3]}, sharex=True)
     fig.subplots_adjust(hspace=0)
@@ -349,8 +353,8 @@ def mkSpaceChargePlot(mscan_list, strip, p1):
     xs = np.linspace(3000, 3850, 1500)
     ys = mExp(xs, p1[0], p1[1])
 
-    strt_fit = np.where(mscan_list[0] == 3000)[0][0]
-    stop_fit = np.where(mscan_list[0] == 3550)[0][0] + 1
+    strt_fit = np.where(mscan_list[0] == start_volt)[0][0]
+    stop_fit = np.where(mscan_list[0] == end_volt)[0][0] + 1
 
     print('\tCreating Space Charge evaluation')
     ax0.errorbar(mscan_list[0][strt_fit:],mscan_list[1][strt_fit:],yerr=mscan_list[2][strt_fit:],marker='.',linestyle='')
