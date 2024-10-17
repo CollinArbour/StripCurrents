@@ -85,29 +85,67 @@ def intRadius(ps,r,pts=1000):
     
     return G2D
 
-def mkScans(strips,ps,i,save=False):
+def mkScans(strips,ps,i,save=False,markers=True):
     '''
     @arg:strips - [xpos,values,stderrs]
     @arg:ps - []
     '''
+    
+    # a0 = ps[0] / (np.sqrt(2*np.pi) * ps[1]) # Amplitude of first 2D Gaussian (nA/mm^2)
+    # a1 = ps[3] / (np.sqrt(2*np.pi) * ps[4]) # # Amplitude of second 2D Gaussian (nA/mm^2)
+    
     # Producing line shape of fit
     xfit = np.linspace(0,200,1000)
     yfit = mGaussianSum(xfit,ps[0],ps[1],ps[2],ps[3],ps[4],ps[5])
     fwhm = FWHM(xfit,yfit)
     fwhmCharge = intFWHM(ps,fwhm)
     
-    plt.errorbar(strips[0],strips[1],yerr=strips[2],linestyle='--')
-    plt.plot(xfit,yfit) # ,label=nms[i]) <--- NEED TO ADAPT FUNCTION TO TAKE IN LABELS
+    # yfit2 = mGaussianSum(xfit,a0,ps[1],ps[2],a1,ps[4],ps[5])
+    # creating the graph
+    # zorder is used si that the error bars show on top of the function
+    #
+    fig, ax = plt.subplots()
+
+    if markers:
+        ax.errorbar(strips[0],strips[1],yerr=strips[2],linestyle=' ', marker='.', zorder=3)
+        ax.text(0.03,0.93,f'Primary',bbox=dict(facecolor='white',alpha=0.5),transform=ax.transAxes)
+
+    else:    
+        ax.text(0.03,0.93,f'σ(x, y=0)',bbox=dict(facecolor='white',alpha=0.5),transform=ax.transAxes)
+    
+    # ax.text(0.6,0.725,f'Src{i+1} FWHM Itot: {fwhmCharge:.2f} nA',bbox=dict(facecolor='grey',alpha=0.75),transform=ax.transAxes)
+    
+    ax.plot(xfit,yfit, color='black', alpha=0.75, zorder=2) 
+    ax.axis([0, max(xfit), 0, max(yfit) * 1.1])
+    
+    # ,label=nms[i]) <--- NEED TO ADAPT FUNCTION TO TAKE IN LABELS
 #     for x in fwhm:
 #         plt.axvline(x,linestyle=':',color='grey',alpha=0.5)
     
-    plt.xlabel('Distance (mm)')
-    plt.ylabel('Linear Current Density (nA/mm)')
-    plt.title(f'MiniCSC 90Sr L1 H2 HV3600, Strip Scan')
-    # plt.title(f'MiniCSC 90Sr Src{i+1} L1 H2 HV3600, Strip Scan')
-    plt.legend()
+    ax.set_xlabel('Distance (mm)')
+    ax.set_ylabel('Linear Current Density (nA/mm)')
+    ax.set_title(f'MiniCSC4: Strip Scan L1 90Sr-Src{i+1} H2 HV3600')
+    '''
+    title format:
+
+    MiniCSC4 {Measurement type} L1 H2 90Sr-Src{i+1} HV3600
+            strip scan vs hvSCAN 
+    '''
     
-    plt.text(110,23-i*3.5,f'Src{i+1} FWHM Itot: {fwhmCharge:.2f} nA',bbox=dict(facecolor='grey',alpha=0.75))
+    # plt.title(f'MiniCSC 90Sr Src{i+1} L1 H2 HV3600, Strip Scan')
+    
+
+    # Putting denotations on the graph for FWHM, 1Sig and 2Sig
+    # ps[2] is the mean
+    # ps[1] is sigma
+    mu = ps[2]
+    sigma = ps[1]
+    
+    ax.fill_between(xfit, yfit, where=((xfit >= fwhm[0]) & (xfit <= fwhm[1])), color='red', alpha=0.4, label='FWHM range')
+    ax.fill_between(xfit, yfit, where=((xfit >= mu - 2 * sigma) & (xfit <= mu + 2 * sigma)), color='red', alpha=0.3, label='2σ range')
+    ax.fill_between(xfit, yfit, where=((xfit >= mu - 3 * sigma) & (xfit <= mu + 3 * sigma)), color='red', alpha=0.2, label='3σ range')
+    
+    ax.legend()
     
     if save:
         plt.savefig(f'./plots/SrSrcs/avgI_src{i}.png',format='png',dpi=400)

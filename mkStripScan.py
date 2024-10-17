@@ -39,9 +39,13 @@ for i  in range(3):
     # Initializing parameters with rough estimate
     p0 = [12,11,77,6,24,77]
     p1, cov = curve_fit(hp.mGaussianSum,np.array(x_pos),lambda_I,p0)
+    a0 = p1[0] / (np.sqrt(2*np.pi) * p1[1]) # Amplitude of first 2D Gaussian (nA/mm^2)
+    a1 = p1[3] / (np.sqrt(2*np.pi) * p1[4]) # # Amplitude of second 2D Gaussian (nA/mm^2)
+    mps = [a0, p1[1], p1[2], a1, p1[4], p1[5]]
 
     # Make plot showing 2D distribution
-    hp.mkHeatMap_GaussSum(50,p1,mlabel=f'Src {i+1}',save=True)
+    #hp.mkHeatMap_GaussSum(50,p1,mlabel=f'Src {i+1}',save=True)
 
     # Make plot displaying Strip scan shape and fit
-    #mkScans(strips,p1,i,save=False)
+    hp.mkScans(strips,mps,i,save=False,markers=False)
+    hp.mkScans(strips,p1,i,save=False,markers=True)
