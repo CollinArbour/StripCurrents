@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.colors as colors
 import scipy.integrate as integrate
 from scipy.optimize import curve_fit
 
@@ -86,6 +87,49 @@ def intRadius(ps,r,pts=1000):
     
     return G2D
 
+def intRadiusCylindrical(ps,r,pts=1000):
+    '''
+    Integrate in cylindrical coordinates
+    '''
+    G0,G0_err = integrate.quad(lambda x: x*Gauss(x,1,ps[1],0),0,r)
+    G1,G1_err = integrate.quad(lambda x: x*Gauss(x,1,ps[4],0),0,r)
+    
+    G2D = ps[0] *(2*np.pi)*G0 + ps[3] *(2*np.pi)*G1
+
+    return G2D
+
+def wirePlacement(r):
+    wireGap = 3.13 #mm
+    wireD = 0.050 #mm
+    wireUnit = wireGap + wireD
+    wire_xs = np.arange(-r,r,wireUnit)
+
+    return wire_xs
+
+def wireLength(r,offset=None):
+    xs = wirePlacement(r)
+    ltot = 0
+    for x in xs:
+        ltot += 2*np.sqrt(r**2-x**2)
+
+    return ltot
+
+def accumCharge(Itot,r):
+    '''
+    Returns accumulated  charge in (mC/cm) / day
+
+    Arguments
+        @Itot : Total current in beamspot of radius r in nA
+        @r :  radius of beam spot
+    '''
+    lwire = wireLength(r)
+
+    Imc = 2*Itot/1000000 # nA -> mA
+    lcm = lwire/10 #mm -> cm
+
+    return Imc/lcm * 60 * 60 * 24
+    
+
 def mkScans(strips,ps,i,save=False):
     '''
     @arg:strips - [xpos,values,stderrs]
@@ -97,18 +141,14 @@ def mkScans(strips,ps,i,save=False):
     fwhm = FWHM(xfit,yfit)
     fwhmCharge = intFWHM(ps,fwhm)
     
-    plt.errorbar(strips[0],strips[1],yerr=strips[2],linestyle='--')
+    plt.errorbar(strips[0],strips[1],yerr=strips[2],linestyle='',marker='.')
     plt.plot(xfit,yfit) # ,label=nms[i]) <--- NEED TO ADAPT FUNCTION TO TAKE IN LABELS
-#     for x in fwhm:
-#         plt.axvline(x,linestyle=':',color='grey',alpha=0.5)
     
     plt.xlabel('Distance (mm)')
     plt.ylabel('Linear Current Density (nA/mm)')
-    plt.title(f'MiniCSC 90Sr L1 H2 HV3600, Strip Scan')
-    # plt.title(f'MiniCSC 90Sr Src{i+1} L1 H2 HV3600, Strip Scan')
+    #plt.ylabel('Avg. Current (nA)')
+    plt.title(f'MiniCSC4: Strip Scan L1 90Sr-Src{i+1} H2 HV3600')
     plt.legend()
-    
-    plt.text(110,23-i*3.5,f'Src{i+1} FWHM Itot: {fwhmCharge:.2f} nA',bbox=dict(facecolor='grey',alpha=0.75))
     
     if save:
         plt.savefig(f'./plots/SrSrcs/avgI_src{i}.png',format='png',dpi=400)
@@ -131,6 +171,15 @@ def mkHeatMap_GaussSum(r,ps,pts=1000,mlabel='',save=False):
     sig1 = ps[4]
     a0 = ps[0] / (np.sqrt(2*np.pi) * sig0) # Amplitude of first 2D Gaussian (nA/mm^2)
     a1 = ps[3] / (np.sqrt(2*np.pi) * sig1) # Amplitude of second 2D Gaussian (nA/mm^2)
+
+    # Determine FWHM
+    xfit = np.linspace(0,200,1000)
+    yfit = mGaussianSum(xfit,ps[0],ps[1],ps[2],ps[3],ps[4],ps[5])
+    fwhm = FWHM(xfit,yfit)
+    print(fwhm)
+    fwhm_d = fwhm[1]-fwhm[0]
+    fwhm_r = fwhm_d/2
+
     #creates grid
     hmpts = np.linspace(-r,r,pts)
     hmxpts,hmypts = np.meshgrid(hmpts,hmpts)
@@ -145,29 +194,35 @@ def mkHeatMap_GaussSum(r,ps,pts=1000,mlabel='',save=False):
     
     hm = np.max(G) / 2
 
-    sig0_lvl = 5
+    sig0_lvl = 3
     sig0_lvl_xval = sig0 * sig0_lvl
     sig0_lvl_yval = mGaussianSum(sig0_lvl_xval,a0,sig0,0,a1,sig1,0)
 
-    contour = plt.contour(hmxpts, hmypts, G, levels=[sig0_lvl_yval,hm], colors='white', linestyles='dashed', linewidths=2)
-    plt.clabel(contour, inline=True, fontsize=8, fmt={sig0_lvl_yval: f'{sig0_lvl}σ_0',hm: 'FWHM'})
+    sig0_lvl01 = 2
+    sig0_lvl_xval01 = sig0 * sig0_lvl01
+    sig0_lvl_yval01 = mGaussianSum(sig0_lvl_xval01,a0,sig0,0,a1,sig1,0)
 
-    sig0_lvl_totChrg = intRadius([a0,sig0,0,a1,sig1,0],sig0_lvl_xval)
-    sig0_lvl3_totChrg = intRadius([a0,sig0,0,a1,sig1,0],sig0*3)
-    sig0_lvl10_totChrg = intRadius([a0,sig0,0,a1,sig1,0],sig0*10)
+    contour = plt.contour(hmxpts, hmypts, G, levels=[sig0_lvl_yval,sig0_lvl_yval01,hm], colors='white', linestyles='dashed', linewidths=2)
+    plt.clabel(contour, inline=True, fontsize=8, fmt={sig0_lvl_yval: f'{sig0_lvl}σ_0',sig0_lvl_yval01: f'{sig0_lvl01}σ_0',hm: 'FWHM'})
+
+    sig0_lvl_totChrg = intRadiusCylindrical([a0,sig0,0,a1,sig1,0],sig0_lvl_xval)
+    sig0_lvl01_totChrg = intRadiusCylindrical([a0,sig0,0,a1,sig1,0],sig0_lvl_xval01)
+    fwhm_totChrg = intRadiusCylindrical([a0,sig0,0,a1,sig1,0],fwhm_r)
     
     if np.max(G) > 1.5:
         print('ERROR: Max is greater than upper limit in Heat Map')
 
-    plt.imshow(G,origin='lower', cmap='viridis',extent=[-r,r,-r,r],vmin=0,vmax=1.5)
+    #mnorm = colors.SymLogNorm(linthresh=0.01,vmin=0,vmax=1.5)
+    #plt.imshow(G,origin='lower', cmap='viridis',norm=mnorm,extent=[-r,r,-r,r]) #,vmin=0,vmax=1.5)
+    plt.imshow(G,origin='lower', cmap='viridis',extent=[-r,r,-r,r]) #,vmin=0,vmax=1.5)
     
     plt.xlabel('X Position (mm)')
     plt.ylabel('Y Position (mm)')
     plt.title(f'Sum of 2D-Gaussians Fit {mlabel}')
 
-    xtxtpos = -41
-    ytxtpos = -41
-    plt.text(xtxtpos,ytxtpos,f'σ0: {sig0:0.2f}mm  σ1: {sig1:.2f}mm  FWHM: \nItot in 3*σ0= {sig0_lvl3_totChrg:.2f} nA\nItot in 5*σ0= {sig0_lvl_totChrg:.2f} nA\nItot in 10*σ0= {sig0_lvl10_totChrg:.2f} nA',bbox=dict(facecolor='grey',alpha=1))
+    xtxtpos = -35
+    ytxtpos = 24
+    plt.text(xtxtpos,ytxtpos,f'σ0: {sig0:0.2f}mm  σ1: {sig1:.2f}mm FWHM: {fwhm_d:0.2f}mm\nItot in FWHM= {fwhm_totChrg:.2f} nA\nItot in {sig0_lvl01}*σ0= {sig0_lvl01_totChrg:.2f} nA\nItot in {sig0_lvl}*σ0= {sig0_lvl_totChrg:.2f} nA',bbox=dict(facecolor='grey',alpha=1))
     #plt.text(xtxtpos,ytxtpos,f'r=5σ_0={sig:.2f} mm \nItot: {chrg_sig:.2f} nA',bbox=dict(facecolor='grey',alpha=0.75))
     
     cbar = plt.colorbar()  # Create a colorbar
