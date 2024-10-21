@@ -86,6 +86,17 @@ def intRadius(ps,r,pts=1000):
     
     return G2D
 
+def intRadiusCylindrical(ps,r,pts=1000):
+    '''
+    Integrate in cylindrical coordinates
+    '''
+    G0,G0_err = integrate.quad(lambda x: x*Gauss(x,1,ps[1],0),0,r)
+    G1,G1_err = integrate.quad(lambda x: x*Gauss(x,1,ps[4],0),0,r)
+    
+    G2D = ps[0] *(2*np.pi)*G0 + ps[3] *(2*np.pi)*G1
+
+    return G2D
+
 def wirePlacement(r):
     wireGap = 3.13 #mm
     wireD = 0.050 #mm
@@ -131,16 +142,12 @@ def mkScans(strips,ps,i,save=False):
     
     plt.errorbar(strips[0],strips[1],yerr=strips[2],linestyle='',marker='.')
     plt.plot(xfit,yfit) # ,label=nms[i]) <--- NEED TO ADAPT FUNCTION TO TAKE IN LABELS
-#     for x in fwhm:
-#         plt.axvline(x,linestyle=':',color='grey',alpha=0.5)
     
     plt.xlabel('Distance (mm)')
     plt.ylabel('Linear Current Density (nA/mm)')
-    plt.title(f'MiniCSC 90Sr L1 H2 HV3600, Strip Scan')
-    # plt.title(f'MiniCSC 90Sr Src{i+1} L1 H2 HV3600, Strip Scan')
+    #plt.ylabel('Avg. Current (nA)')
+    plt.title(f'MiniCSC4: Strip Scan L1 90Sr-Src{i+1} H2 HV3600')
     plt.legend()
-    
-    plt.text(110,23-i*3.5,f'Src{i+1} FWHM Itot: {fwhmCharge:.2f} nA',bbox=dict(facecolor='grey',alpha=0.75))
     
     if save:
         plt.savefig(f'./plots/SrSrcs/avgI_src{i}.png',format='png',dpi=400)
@@ -197,9 +204,9 @@ def mkHeatMap_GaussSum(r,ps,pts=1000,mlabel='',save=False):
     contour = plt.contour(hmxpts, hmypts, G, levels=[sig0_lvl_yval,sig0_lvl_yval01,hm], colors='white', linestyles='dashed', linewidths=2)
     plt.clabel(contour, inline=True, fontsize=8, fmt={sig0_lvl_yval: f'{sig0_lvl}σ_0',sig0_lvl_yval01: f'{sig0_lvl01}σ_0',hm: 'FWHM'})
 
-    sig0_lvl_totChrg = intRadius([a0,sig0,0,a1,sig1,0],sig0_lvl_xval)
-    sig0_lvl01_totChrg = intRadius([a0,sig0,0,a1,sig1,0],sig0_lvl_xval01)
-    fwhm_totChrg = intRadius([a0,sig0,0,a1,sig1,0],fwhm_r)
+    sig0_lvl_totChrg = intRadiusCylindrical([a0,sig0,0,a1,sig1,0],sig0_lvl_xval)
+    sig0_lvl01_totChrg = intRadiusCylindrical([a0,sig0,0,a1,sig1,0],sig0_lvl_xval01)
+    fwhm_totChrg = intRadiusCylindrical([a0,sig0,0,a1,sig1,0],fwhm_r)
     
     if np.max(G) > 1.5:
         print('ERROR: Max is greater than upper limit in Heat Map')

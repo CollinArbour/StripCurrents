@@ -56,11 +56,16 @@ for i  in range(3):
         lwires = hp.wireLength(r)
         accChrg = hp.accumCharge(totChrg,r)
 
+        actual_totChrg = hp.intRadiusCylindrical(mps,r)
+        actual_accChrg = hp.accumCharge(actual_totChrg,r)
+
         print(f'\tBeam spot {r_names[i]} diameter: \t{2*r/10:.2f} cm')
         print(f'\t\tI enclosed  : \t\t{totChrg:.2f} nA')
+        print(f'\t\tI actual  : \t\t{actual_totChrg:.2f} nA')
         print(f'\t\tNumber of wires : \t{len(hp.wirePlacement(r))}')
         print(f'\t\tLenght of wires : \t{lwires/10:.2f} cm')
         print(f'\t\tAccumulated Charge : \t{accChrg:.2f} (mC/cm) / day')
+        print(f'\t\tAct. Accum. Charge : \t{actual_accChrg:.2f} (mC/cm) / day')
         print()
 
     
