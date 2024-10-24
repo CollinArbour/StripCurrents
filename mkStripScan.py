@@ -33,18 +33,16 @@ for i  in range(3):
     lambda_I = np.array(mdata[1]) / stripWdth   # now has Units now nA/mm
     lambda_I_err = np.array(mdata[2]) / stripWdth   # errors also now nA/mm
 
+    #strips = [x_pos,mdata[1],mdata[2]]
     strips = [x_pos,lambda_I,lambda_I_err]
 
     # Fitting the curve to sum of two Gaussians  
     # Initializing parameters with rough estimate
     p0 = [12,11,77,6,24,77]
-    p1, cov = curve_fit(hp.mGaussianSum,np.array(x_pos),lambda_I,p0)
-    a0 = p1[0] / (np.sqrt(2*np.pi) * p1[1]) # Amplitude of first 2D Gaussian (nA/mm^2)
-    a1 = p1[3] / (np.sqrt(2*np.pi) * p1[4]) # # Amplitude of second 2D Gaussian (nA/mm^2)
-    mps = [a0, p1[1], p1[2], a1, p1[4], p1[5]]
+    p1, cov = curve_fit(hp.mGaussianSum,np.array(x_pos),strips[1],p0)
 
     # Make plot showing 2D distribution
-    #hp.mkHeatMap_GaussSum(50,p1,mlabel=f'Src {i+1}',save=True)
+    hp.mkHeatMap_GaussSum(40,p1,mlabel=f'Src {i+1}',save=True)
 
     # Make plot displaying Strip scan shape and fit
     hp.mkScans(strips,mps,i,save=False,markers=False)
