@@ -74,4 +74,6 @@ for i  in range(3):
     #hp.mkHeatMap_GaussSum(40,p1,mlabel=f'Src {i+1}',save=True)
 
     # Make plot displaying Strip scan shape and fit
-    #mkScans(strips,p1,i,save=False)
+    #hp.mkScans(strips,p1,i,save=False)
+    #hp.mkScans(strips,mps,i,save=False,markers=False)
+    #
