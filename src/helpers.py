@@ -129,11 +129,10 @@ def accumCharge(Itot,r):
 
     return Imc/lcm * 60 * 60 * 24
     
-
 def mkScans(strips,ps,i,save=False):
     '''
-    @arg:strips - [xpos,values,stderrs]
-    @arg:ps - []
+    arg:strips - [xpos,values,stderrs] **values is nA/mm (across with width of the stri)
+    arg:ps - curve fit
     '''
     # Producing line shape of fit
     xfit = np.linspace(0,200,1000)
@@ -141,21 +140,24 @@ def mkScans(strips,ps,i,save=False):
     fwhm = FWHM(xfit,yfit)
     fwhmCharge = intFWHM(ps,fwhm)
     
-    plt.errorbar(strips[0],strips[1],yerr=strips[2],linestyle='',marker='.')
+    plt.errorbar(strips[0],strips[1],yerr=strips[2],linestyle='--')
     plt.plot(xfit,yfit) # ,label=nms[i]) <--- NEED TO ADAPT FUNCTION TO TAKE IN LABELS
+#     for x in fwhm:
+#         plt.axvline(x,linestyle=':',color='grey',alpha=0.5)
     
     plt.xlabel('Distance (mm)')
     plt.ylabel('Linear Current Density (nA/mm)')
-    #plt.ylabel('Avg. Current (nA)')
-    plt.title(f'MiniCSC4: Strip Scan L1 90Sr-Src{i+1} H2 HV3600')
+    plt.title(f'MiniCSC 90Sr L1 H2 HV3600, Strip Scan')
+    # plt.title(f'MiniCSC 90Sr Src{i+1} L1 H2 HV3600, Strip Scan')
     plt.legend()
+    
+    plt.text(110,23-i*3.5,f'Src{i+1} FWHM Itot: {fwhmCharge:.2f} nA',bbox=dict(facecolor='grey',alpha=0.75))
     
     if save:
         plt.savefig(f'./plots/SrSrcs/avgI_src{i}.png',format='png',dpi=400)
         plt.close()
     else:
         plt.show()
-
 
 def mkHeatMap_GaussSum(r,ps,pts=1000,mlabel='',save=False):
     '''
@@ -194,35 +196,29 @@ def mkHeatMap_GaussSum(r,ps,pts=1000,mlabel='',save=False):
     
     hm = np.max(G) / 2
 
-    sig0_lvl = 3
-    sig0_lvl_xval = sig0 * sig0_lvl
-    sig0_lvl_yval = mGaussianSum(sig0_lvl_xval,a0,sig0,0,a1,sig1,0)
+    sig0_lvl = 5        
+    sig0_lvl_xval = sig0 * sig0_lvl     #5sigma
+    sig0_lvl_yval = mGaussianSum(sig0_lvl_xval,a0,sig0,0,a1,sig1,0)     #Create and sum 2 Gaussians 
 
-    sig0_lvl01 = 2
-    sig0_lvl_xval01 = sig0 * sig0_lvl01
-    sig0_lvl_yval01 = mGaussianSum(sig0_lvl_xval01,a0,sig0,0,a1,sig1,0)
+    contour = plt.contour(hmxpts, hmypts, G, levels=[sig0_lvl_yval,hm], colors='white', linestyles='dashed', linewidths=2)
+    plt.clabel(contour, inline=True, fontsize=8, fmt={sig0_lvl_yval: f'{sig0_lvl}σ_0',hm: 'FWHM'})
 
-    contour = plt.contour(hmxpts, hmypts, G, levels=[sig0_lvl_yval,sig0_lvl_yval01,hm], colors='white', linestyles='dashed', linewidths=2)
-    plt.clabel(contour, inline=True, fontsize=8, fmt={sig0_lvl_yval: f'{sig0_lvl}σ_0',sig0_lvl_yval01: f'{sig0_lvl01}σ_0',hm: 'FWHM'})
-
-    sig0_lvl_totChrg = intRadiusCylindrical([a0,sig0,0,a1,sig1,0],sig0_lvl_xval)
-    sig0_lvl01_totChrg = intRadiusCylindrical([a0,sig0,0,a1,sig1,0],sig0_lvl_xval01)
-    fwhm_totChrg = intRadiusCylindrical([a0,sig0,0,a1,sig1,0],fwhm_r)
+    sig0_lvl_totChrg = intRadius([a0,sig0,0,a1,sig1,0],sig0_lvl_xval)   #5sigma
+    sig0_lvl3_totChrg = intRadius([a0,sig0,0,a1,sig1,0],sig0*3)         #3sigma
+    sig0_lvl10_totChrg = intRadius([a0,sig0,0,a1,sig1,0],sig0*10)       #10sigma
     
     if np.max(G) > 1.5:
         print('ERROR: Max is greater than upper limit in Heat Map')
 
-    #mnorm = colors.SymLogNorm(linthresh=0.01,vmin=0,vmax=1.5)
-    #plt.imshow(G,origin='lower', cmap='viridis',norm=mnorm,extent=[-r,r,-r,r]) #,vmin=0,vmax=1.5)
-    plt.imshow(G,origin='lower', cmap='viridis',extent=[-r,r,-r,r]) #,vmin=0,vmax=1.5)
+    plt.imshow(G,origin='lower', cmap='viridis',extent=[-r,r,-r,r],vmin=0,vmax=1.5)
     
     plt.xlabel('X Position (mm)')
     plt.ylabel('Y Position (mm)')
     plt.title(f'Sum of 2D-Gaussians Fit {mlabel}')
 
-    xtxtpos = -35
-    ytxtpos = 24
-    plt.text(xtxtpos,ytxtpos,f'σ0: {sig0:0.2f}mm  σ1: {sig1:.2f}mm FWHM: {fwhm_d:0.2f}mm\nItot in FWHM= {fwhm_totChrg:.2f} nA\nItot in {sig0_lvl01}*σ0= {sig0_lvl01_totChrg:.2f} nA\nItot in {sig0_lvl}*σ0= {sig0_lvl_totChrg:.2f} nA',bbox=dict(facecolor='grey',alpha=1))
+    xtxtpos = -41
+    ytxtpos = -41
+    plt.text(xtxtpos,ytxtpos,f'σ0: {sig0:0.2f}mm  σ1: {sig1:.2f}mm  FWHM: \nItot in 3*σ0= {sig0_lvl3_totChrg:.2f} nA\nItot in 5*σ0= {sig0_lvl_totChrg:.2f} nA\nItot in 10*σ0= {sig0_lvl10_totChrg:.2f} nA',bbox=dict(facecolor='grey',alpha=1))
     #plt.text(xtxtpos,ytxtpos,f'r=5σ_0={sig:.2f} mm \nItot: {chrg_sig:.2f} nA',bbox=dict(facecolor='grey',alpha=0.75))
     
     cbar = plt.colorbar()  # Create a colorbar
@@ -235,6 +231,77 @@ def mkHeatMap_GaussSum(r,ps,pts=1000,mlabel='',save=False):
     else:
         plt.show()
 
+def mkGasGain(mscan_list, strip, start_volt=3000, end_volt=3550, start_plateau=0, end_plateau=500, x_lower_lim=None, x_upper_lim=None, y_lower_lim=None, y_upper_lim=None):
+    '''
+        Create figure showing GasGain. Code largely taken from mkRawFittedPlot.
+
+        Arguments:
+            -mscan_list: list of HV, avg Current Vals, and stderr
+            -strip: strip number for labeling
+            -start_volt: starting voltage for  exponential fit
+            -end_volt: ending voltage for exponential fit
+            -start_plateau: starting point for plateau value calculation, which is used to calculate gas gain
+            -end_plateau: ending point for plateau calculation
+            -x_lower_lim: lower limit for graph zoom on x axis
+            -x_upper_lim: upper limit for graph zoom on x axis
+            -y_lower_lim: lower limit for graph zoom on y axis
+            -y_upper_lim: upper limit for graph zoom on y axis
+
+    '''
+    
+    #start exponential fit
+    print('\n\tPerforming fit')
+    strt_fit = np.where(mscan_list[0]==start_volt)[0][0]
+    stop_fit = np.where(mscan_list[0]==end_volt)[0][0]+1
+
+    #Find index of plateau starting and ending points
+    plateau_v1 = np.where(mscan_list[0]==start_plateau)[0][0]+1     #+1 to exclue 0 point, remove if start_plateau is not zero. NOTE: Will implement remove paramater in the future!
+    plateau_v2 = np.where(mscan_list[0] == end_plateau)[0][0]+1     #+1 to include last point
+
+    #Find mean of plateau
+    plateau_vals = mscan_list[1][plateau_v1:plateau_v2]
+    plateau_mean = np.mean(plateau_vals)
+    
+    # Gas gain value
+    # Gas gain = avg current / plateau mean
+    gasGain = mscan_list[1] / plateau_mean
+    
+    #get curve fit
+    p0 = [0.001,0.01]
+    p1,cov = curve_fit(mExp, mscan_list[0][strt_fit:stop_fit], gasGain[strt_fit:stop_fit], p0)
+
+    #x and y vals for exp plotting
+    xs = np.linspace(0,3850,2000)
+    ys = mExp(xs,p1[0],p1[1])
+
+    # Create raw figure
+    print('\tCreating raw figure')
+    plt.errorbar(mscan_list[0][:stop_fit], gasGain[:stop_fit], marker='.',linestyle='')
+    plt.plot(xs,ys)
+
+    #show line of fit range NOTE: -1 needed to prevent error sometimes?
+    plt.axvline(mscan_list[0][strt_fit],color='grey',alpha=0.3,linestyle='--')
+    plt.axvline(mscan_list[0][stop_fit-1],color='grey',alpha=0.3,linestyle='--')
+    
+    #Display Plateau value used to calculate gas gain
+    plt.text(0.02, 0.98, verticalalignment='top',horizontalalignment='left', bbox=dict(facecolor='lightblue', alpha=0.5), transform=plt.gca().transAxes, s=f'PLATEAU VAL: {plateau_mean:.4f}', fontweight='bold', color='blue')
+    
+    #change scaling of plot
+    plt.xlim(x_lower_lim, x_upper_lim)
+    plt.ylim(y_lower_lim, y_upper_lim)
+    
+    #Title and label graph
+    plt.title(f'{strip} Gas Gain')
+    plt.xlabel('HV (V)')
+
+    plt.ylabel('Gas Gain')
+    #Display Graph for Testing
+    plt.show()
+
+    #Save and close graph
+    #plt.savefig(f'./plots/HV_Scans/GasGain/{strip}_GasGain.png', format='png', dpi=400)
+    plt.close()
+    
 def mkRawFittedPlot(mscan_list, strip, plot=True, start_volt=3000, end_volt=3550):
     '''
         This Function serves 2 Purposes:
@@ -296,10 +363,7 @@ def mkPlateauPlot(mscan_list, strip, src, hole, **kwargs):
                     -index 0 holds the HV (x-axis) values
                     -index 1 holds the Current (y-axis) values
 
-        TODO:
-            -implement the num_calcs feature
-                -iterative system to calculate plateau mean across different ranges, and label the value
-                    -more parameters needed for range points
+        
     '''
     defaults = {
         '''
@@ -309,7 +373,6 @@ def mkPlateauPlot(mscan_list, strip, src, hole, **kwargs):
             When calling the function, these parameters can be changed the same way as any others. 
         '''
         #optional parameters
-        'num_calcs': 1,             #number of mean calculations to do.yet to be implemented, so keep at 1.
         'start_point': 0,           #(V), starting point in data run.
         'exclude_start' : True,     #exludes starting point of data(intended to remove zero)
         'end_point': 500,           #(V), ending point in data
@@ -344,8 +407,8 @@ def mkPlateauPlot(mscan_list, strip, src, hole, **kwargs):
     y_vals = mscan_list[1][strt_fit:stop_fit]
 
     #plot value points with errorbars
-    plt.errorbar(x_vals, y_vals, yerr=mscan_list[2][strt_fit:stop_fit], marker='.', linestyle='', label='Corrected Avg Current')
-
+    plt.errorbar(x_vals, y_vals,yerr=mscan_list[2][strt_fit:stop_fit], marker='.', linestyle='', label='Corrected Avg Current')
+    
     
     if (defaults['uncorrected_curr'] is not None) and (defaults['uncorrected_dark_curr'] is not None):
         
@@ -384,9 +447,9 @@ def mkPlateauPlot(mscan_list, strip, src, hole, **kwargs):
     plt.text(0.02, 0.9, verticalalignment='top', horizontalalignment='left', bbox=dict(facecolor='lightblue', alpha=0.5), transform=plt.gca().transAxes, s=f'y = {slope:.2e} * x + {intercept:.2e}', fontweight='bold', color='black')
 
     #label and title plot, save and close
-    plt.title(f'MiniCSC4: HV Scan, L1, 90{src}-Src1, {hole.replace("_", "").replace("0","").upper()}, {strip}')
+    plt.title(f'MiniCSC4: HV Scan, L1, 90{src}-Src1, {hole.replace("_", "").replace("0","").upper()}, {strip}, Space Charge Fit')
     plt.xlabel('HV (V)')
-    plt.ylabel('Avg. I (nA)')
+    plt.ylabel('ln(Avg. I)')
     plt.legend()
     plt.savefig(f'./plots/HV_Scans/{strip}_src{src}_plateau.png', format='png', dpi=400)
     plt.close()

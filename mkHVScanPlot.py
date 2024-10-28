@@ -37,8 +37,9 @@ stripGap = 0.35 ##mm <- ME1/1 chamber TDR (ME2/1 is 0.5 mm)
 
 #NOTE: lists of different run files.comment and uncomment as needed. should be in a .data/HV_Scans folder.
 #run_nms = ['241001_refMeasures_S2','241002_refMeasures_S6','240820_refMeasures_S7','241002_refMeasures_S10']
-run_nms = ['241014_Plateau_S2', '241014_Plateau_S6', '241015_Plateau_S10']
+#run_nms = ['241014_Plateau_S2', '241014_Plateau_S6', '241015_Plateau_S10']
 #run_nms = ['241002_refMeasures_S10']
+run_nms = ['241001_refMeasures_S2']
 
 # Handling Strip Scans
 for run_nm in run_nms:
@@ -86,18 +87,21 @@ for run_nm in run_nms:
 
             if drk_run.getHV() == drk_hvscan[0][index_of_negatives]:
                 ddf.describe(run=drk_run)
-
+    
     #Holds HV, corrected Avg Current, combined stderror
     mhvscan = [src_hvscan[0], corrected_hvscan, quadSum(src_hvscan[2],drk_hvscan[2])]
 
     src = sdf.getFileSrc()
     hole = sdf.getHole()
 
-    #Generate Raw Fitted Graph(THIS BOTH GENERATES A GRAPH AND RETURNS A VALUE)
-    #p1 = hp.mkRawFittedPlot(mhvscan, strip)
+    #Generate Raw Fitted Graph(THIS BOTH GENERATES A GRAPH AND RETURNS A VALUE [p1])
+    p1 = hp.mkRawFittedPlot(mhvscan, strip)
+
+    #Generate Gas Gain
+    hp.mkGasGain(mhvscan, strip, start_volt=3000, end_volt=3600)
 
     #create plateau graph
-    hp.mkPlateauPlot(mhvscan, strip, src, hole, end_point=500, uncorrected_curr=src_hvscan, uncorrected_dark_curr=drk_hvscan, y_upper_lim=0.0035)
+    #hp.mkPlateauPlot(mhvscan, strip, src, hole, end_point=500, uncorrected_curr=src_hvscan, uncorrected_dark_curr=drk_hvscan, y_upper_lim=0.0035)
 
     #create space charge plot
-    #hp.mkSpaceChargePlot(mhvscan, strip, p1)
+    #hp.mkSpaceChargePlot(mhvscan, strip, p1, start_volt=3400, end_volt=3600)
