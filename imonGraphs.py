@@ -19,8 +19,27 @@ the first FULL day of data was taken on 2024-10-19
 start_date = '2024-10-18'
 end_date = '2024-10-24'
 
+#CAEN log reading and parsing
+with open('./data/LogFiles/CAENGECO2020.log', 'r') as file:
+        log_data = file.read()
 
-hp.current_vs_time(start_date, end_date)
+#cleans log data file using regex to only contain timestamps and imon values
+matches = hp.parse_log(log_data)
+
+#creates list of timesamps and imon values from cleaned log file
+timestamps = hp.timestamps(matches)
+imon_values = hp.imon_values(matches)
+
+
+
+
+
+
+
+
+
+
+hp.current_vs_time(start_date, end_date, timestamps, imon_values)
 
 
 #hp.accCharge_vs_time(start_date, end_date)

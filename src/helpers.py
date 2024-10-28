@@ -283,7 +283,67 @@ def mkHeatMap_GaussSum(r,ps,pts=1000,mlabel='',save=False):
         plt.show()
 
 
+def parse_log(log_data):
+    pattern = r"\[(.*?)\]:.*par \[IMonH\] val \[(.*?)\];"
+    matches = re.findall(pattern, log_data)
+    
+    return matches
+
+def timestamps(matches):
+    timestamps = [datetime.fromisoformat(match[0]) for match in matches]
+
+    return timestamps
+
+def imon_values(matches):
+    imon_values = [float(match[1]) for match in matches]
+    
+    return imon_values
+
+def current_vs_time(start_date, end_date, timestamps, imon_values):
+    
+    df = pd.DataFrame({'Timestamp': timestamps, 'IMon': imon_values})
+    df.set_index('Timestamp', inplace=True)
+
+    # Step 3: Filter the data based on the provided date range
+    df_filtered = df[start_date:end_date]
+
+    # Step 4: Resample data to reduce noise (e.g., take mean every minute)
+    df_resampled = df_filtered.resample('5min').mean()  # Resample per minute, adjust '1T' for different intervals (e.g., '5T' for 5 minutes)
+
+    #print(df_resampled.mean()* 0.7/1.2)
+
+    #dfData = (df_resampled)
+    #imon = open('./imonvalues.txt', 'a')
+    #imon.write(df_resampled.to_string())
+
+    #imon = pd.DataFrame.to_string
+    #imon.write(imon)
+
+
+    #print(df_resampled)
+
+    # Step 5: Plot the resampled data
+    plt.plot(df_resampled.index, df_resampled['IMon'], label="IMon (μA)", marker=".", color="blue")
+
+    max_imonh = df_resampled['IMon'].max()  # Find the maximum IMonH value
+    top_limit = max_imonh * 1.2  # Increase the y-axis limit by 20%
+
+
+    # Customize the plot
+    plt.title(f"IMon Over Time ({start_date} to {end_date})")
+    plt.xlabel("Time (Days)")
+    plt.ylabel("IMon (μA)")
+    #plt.grid(True)
+    plt.xticks(rotation=45)
+    plt.ylim(0, top_limit)
+    plt.tight_layout()
+    plt.legend()
+
+    # Show plot
+    plt.show()
+
 # This is the skeleton of how we will be getting our graph for CAEN current vs time
+'''
 def current_vs_time(start_date, end_date):
     # Step 1: Read the data from a text file
     file_path = './data/LogFiles/CAENGECO2020.log'
@@ -339,6 +399,22 @@ def current_vs_time(start_date, end_date):
 
     # Show plot
     plt.show()
+'''
+
+def accCharge_vs_time():
+    print()
+
+    log_file_path ='./data/LogFiles/CAENGECO2020.log'
+
+    with open(log_file_path, 'r') as file:
+        log_data = file.read()
+
+    pattern = r"\[(.*?)\]:.*par \[IMonH\] val \[(.*?)\];"
+    matches = re.findall(pattern, log_data)
+
+    timestamps = [datetime.fromisoformat(match[0]) for match in matches]
+    imon_values = [float(match[1]) for match in matches]
+
 
 
 # instead of I vs T we are going to do accQ vs T
@@ -367,7 +443,7 @@ def accCharge_vs_time(start_date, end_date):
     with open(acc_charge_file_path, 'r') as file:
         acc_charge_values = [float(line.strip()) for line in file if line.strip()]
 
-    print(acc_charge_values)
+    #print(acc_charge_values)
 
     # Interpolate the accumulated charge values to match the number of timestamps
     original_indices = np.linspace(0, len(acc_charge_values) - 1, num=len(acc_charge_values))
