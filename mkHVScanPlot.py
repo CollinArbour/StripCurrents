@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 '''
 
-This File is currently being used to process the HV_Scans data files, using the DataFile class, and call upon functions in the helpers class to graph the data.
-It also does a small amount of data processing (matching function) and data verifying ("more noise than signal check") before calling upon the graphing functions.
+This File is currently being used to process the HV_Scans data files and graph the data using the functions in the helpers class
 
 '''
 from re import T
@@ -90,7 +89,7 @@ for run_nm in run_nms:
     #table_strip.append(strip)
 
     #create plateau graph
-    hp.mkPlateauPlot(mhvscan, strip, src, hole, uncorrected_curr=src_hvscan, uncorrected_dark_curr=drk_hvscan, y_upper_lim=0.0035)
+    #hp.mkPlateauPlot(mhvscan, strip, src, hole, uncorrected_curr=src_hvscan, uncorrected_dark_curr=drk_hvscan, y_upper_lim=0.0035)
 
     #create space charge plot
     #hp.mkSpaceChargePlot(mhvscan, strip, start_volt=3400, end_volt=3600)
