@@ -275,7 +275,7 @@ def mkHeatMap_GaussSum(r,ps,pts=1000,mlabel='',save=False):
 def mkGasGain(mscan_list, strip, hole, start_volt=3000, end_volt=3600, start_plateau=0, end_plateau=500, x_lower_lim=None, x_upper_lim=None, y_lower_lim=None, y_upper_lim=None, plot=True):    
     '''
         Create figure showing GasGain. Code largely taken from mkRawFittedPlot.
-        returns plateau_mean and gas gain val for making table(for now)
+        returns plateau_mean and gas gain val for making table(for now, should be moved out of function in the future.)
 
         Arguments:
             -mscan_list: list of HV, avg Current Vals, and stderr
