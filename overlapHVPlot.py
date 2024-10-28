@@ -12,9 +12,7 @@ def mkOverlappingPlot(mscan_list1, strip1, src1, hole1, mscan_list2, **kwargs):
         Plot overlapping Currents given two mscan_lists. Currently expects two files of same strip, src, and hole   
     '''
     defaults = {
-        '''
-            Holds more parameters. More documentation in mkPlateauPlot if needed.
-        '''
+        #holds more parameters
         #optional parameters
         'start_point': 0,           #(V), starting point in data run.
         'exclude_start' : True,     #exludes starting point of data(intended to remove zero)
@@ -30,6 +28,7 @@ def mkOverlappingPlot(mscan_list1, strip1, src1, hole1, mscan_list2, **kwargs):
     defaults.update(kwargs)
     
     #Start and stop graphing points for first data file
+    #NOTE: should be changed to range mask
     first_start_fit = np.where(mscan_list1[0] == 0)[0][0]
     first_stop_fit = np.where(mscan_list1[0] == 500)[0][0]+1
 
