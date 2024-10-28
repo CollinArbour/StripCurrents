@@ -38,4 +38,6 @@ accumulated_charge = hp.accCharge_calc(timestamps, imon_values)
 #hp.current_vs_time(start_date, end_date, timestamps, imon_values)
 
 ''' shows graph of the accumulated charge vs time '''
-hp.accCharge_vs_time(start_date, end_date,timestamps, accumulated_charge)
+#hp.accCharge_vs_time(start_date, end_date,timestamps, accumulated_charge)
+
+hp.accCharge_per_day(start_date,end_date, timestamps, accumulated_charge)

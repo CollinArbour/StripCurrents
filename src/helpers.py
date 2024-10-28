@@ -391,5 +391,22 @@ def accCharge_vs_time(start_date, end_date, timestamps, accumulated_charge):
     # Show plot
     plt.show()
 
-def accCharge_per_day():
-    print()
+def accCharge_per_day(start_date, end_date, timestamps, accumulated_charge):
+    ''' creates a table with the charge accumulated per day '''
+
+    df = pd.DataFrame({'Timestamp': timestamps, 'AccumulatedCharge': accumulated_charge})
+    df.set_index('Timestamp', inplace=True)
+
+    start_date = pd.to_datetime(start_date)
+    end_date = pd.to_datetime(end_date)
+
+    df_filtered = df[start_date:end_date]
+
+    df_filtered['Date'] = df_filtered.index.date
+    daily_accumulated_charge = df_filtered.groupby('Date')['AccumulatedCharge'].max().reset_index()
+
+    daily_accumulated_charge['DailyCharge'] = daily_accumulated_charge['AccumulatedCharge'].diff().fillna(daily_accumulated_charge['AccumulatedCharge'])
+
+    print(daily_accumulated_charge)
+
+
