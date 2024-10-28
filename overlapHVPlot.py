@@ -7,37 +7,6 @@ import matplotlib.pyplot as plt
 import src.DataFile as df
 import src.helpers as hp
 
-def matching(src,drk):
-    '''
-        This function takes in a source scan and dark scan, finds the Matching HV pairs between the two, and removes any nonmatching HV points in either one.
-
-        Arguments:
-            -src: hvscan with source
-            -drk: hvscan without source
-    '''
-    src = np.array(src)
-    drk = np.array(drk)
-    mtchs,src_idxs,drk_idxs = np.intersect1d(src[0],drk[0],return_indices=True)
-    print('\t\tMatched')
-    return src[:,src_idxs],drk[:,drk_idxs]
-
-def quadSum(a,b):
-    return np.sqrt(a**2 + b**2)
-
-def createRun(run_nm, criteria, src=True):
-    '''Does Basic Data processing using the dataFile class'''
-    if src == False:
-        dataObj = df.DataFile(f'{run_nm[7:]}_dark')
-        dataObj.parseDataFileText(f'./data/HV_Scans/{run_nm}_dark.txt')
-    else:
-        dataObj = df.DataFile(f'{run_nm[7:]}')
-        dataObj.parseDataFileText(f'./data/HV_Scans/{run_nm}.txt')
-    
-    dataObj.filterRuns(criteria)
-    dataObj.sortDataRuns('hv')
-
-    return dataObj
-
 def mkOverlappingPlot(mscan_list1, strip1, src1, hole1, mscan_list2, **kwargs):       
     '''
         Plot overlapping Currents given two mscan_lists. Currently expects two files of same strip, src, and hole   
@@ -127,27 +96,27 @@ def main(run_nm1, run_nm2):
 
     # Load HV Scans with source
     print(f'Loading Data for {run_nm1}')
-    sdf1 = createRun(run_nm1, criteria)
-    sdf2 = createRun(run_nm2, criteria)
+    sdf1 = hp.createRun(run_nm1, criteria)
+    sdf2 = hp.createRun(run_nm2, criteria)
 
      # Load Dark Current runs
     print(f'\nLoading Dark Currents for {run_nm1}')
-    ddf1 = createRun(run_nm1, criteria, src=False)
-    ddf2 = createRun(run_nm2, criteria, src=False)
+    ddf1 = hp.createRun(run_nm1, criteria, src=False)
+    ddf2 = hp.createRun(run_nm2, criteria, src=False)
 
 
      # Match the data points from the two scans
     print('\n\tMatching the HV points of the first scan')
     src_hvscan1 = sdf1.getHVScan()
     drk_hvscan1 = ddf1.getHVScan(src=False)
-    src_hvscan1, drk_hvscan1 = matching(src_hvscan1,drk_hvscan1)
+    src_hvscan1, drk_hvscan1 = hp.matching(src_hvscan1,drk_hvscan1)
     print('\n\tSubtracting background')
     corrected_hvscan1 = src_hvscan1[1] - drk_hvscan1[1]
 
     print("\n\tMatching second scan")
     src_hvscan2 = sdf2.getHVScan()
     drk_hvscan2 = ddf2.getHVScan(src=False)
-    src_hvscan2, drk_hvscan2 = matching(src_hvscan2, drk_hvscan2)
+    src_hvscan2, drk_hvscan2 = hp.matching(src_hvscan2, drk_hvscan2)
     print('\n\tSubtracting background 2nd run')
     corrected_hvscan2 = src_hvscan2[1] - drk_hvscan2[1]
 
@@ -155,11 +124,11 @@ def main(run_nm1, run_nm2):
 
 
     #Holds HV, corrected Avg Current, combined stderror
-    mhvscan1 = [src_hvscan1[0], corrected_hvscan1, quadSum(src_hvscan1[2], drk_hvscan1[2])]
+    mhvscan1 = [src_hvscan1[0], corrected_hvscan1, hp.quadSum(src_hvscan1[2], drk_hvscan1[2])]
     src1 = sdf1.getFileSrc()
     hole1 = sdf1.getHole()
 
-    mhvscan2 = [src_hvscan2[0], corrected_hvscan2, quadSum(src_hvscan2[2], drk_hvscan2[2])]
+    mhvscan2 = [src_hvscan2[0], corrected_hvscan2, hp.quadSum(src_hvscan2[2], drk_hvscan2[2])]
     
 
     mkOverlappingPlot(mhvscan1, strip, src1, hole1, mhvscan2)
