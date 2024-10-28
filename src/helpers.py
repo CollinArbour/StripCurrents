@@ -127,6 +127,23 @@ def accumCharge(Itot,r):
     lcm = lwire/10 #mm -> cm
 
     return Imc/lcm * 60 * 60 * 24
+
+def accumChargeImon(Imon,t):
+    '''
+    Returns accumulated  charge in (mC/cm) / day
+
+    Arguments
+        @Itot : Total current in beamspot of radius r in nA
+        @r :  radius of beam spot
+    '''
+    frac = 0.29183333333333333
+    Itot = frac * Imon
+
+    Imc = 2*Itot/1000000 # nA -> mA
+    lcm = 26.22/10 #mm -> cm
+    #lcm = lwire/10 #mm -> cm
+
+    return Imc/lcm * t
     
 
 def mkScans(strips,ps,i,save=False):
