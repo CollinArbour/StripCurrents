@@ -283,46 +283,61 @@ def mkHeatMap_GaussSum(r,ps,pts=1000,mlabel='',save=False):
         plt.show()
 
 
-def parse_log(log_data):
+
+def parse_log(log_file):
+    ''' reads and cleans data file returning '''
+    with open(log_file, 'r') as file:
+        log_data = file.read()
+    
     pattern = r"\[(.*?)\]:.*par \[IMonH\] val \[(.*?)\];"
     matches = re.findall(pattern, log_data)
     
     return matches
 
 def timestamps(matches):
+    ''' returnes a datatime array which contains timestamps in the format [datetime.datetime(year, month, day, hour, minute, second), datetime.datetime()...] '''
     timestamps = [datetime.fromisoformat(match[0]) for match in matches]
 
     return timestamps
 
 def imon_values(matches):
+    ''' returns the CAEN current monitor readout for plotting and calculation'''
     imon_values = [float(match[1]) for match in matches]
     
     return imon_values
 
-def current_vs_time(start_date, end_date, timestamps, imon_values):
+def accCharge_calc(timestamps, imon_values):
+    ''' calculates accumulated chrage based on timestamps and imon values given from log file '''
+
+    accCharge = [0]
+
+    frac = (350.05*2)/1200
+
+    #needed to calulate the difference in seconds between log reports
+    seconds = [
+        (timestamps[i] - timestamps[i -1]).total_seconds()
+        for i in range(1, len(timestamps))
+    ]
+
+    for i in range(len(seconds)):
+        temp_accCharge = (imon_values[i] * frac / 1000) / 26.22 * seconds[i] 
+        accCharge.append(accCharge[-1] + temp_accCharge)
+
+    return accCharge
     
+
+def current_vs_time(start_date, end_date, timestamps, imon_values):
+    ''' plots the current versus time for a specified amount of time '''
     df = pd.DataFrame({'Timestamp': timestamps, 'IMon': imon_values})
     df.set_index('Timestamp', inplace=True)
 
-    # Step 3: Filter the data based on the provided date range
+    # Filter the data based on the provided date range
     df_filtered = df[start_date:end_date]
 
-    # Step 4: Resample data to reduce noise (e.g., take mean every minute)
+    # Resample data to reduce noise (e.g., take mean every minute)
     df_resampled = df_filtered.resample('5min').mean()  # Resample per minute, adjust '1T' for different intervals (e.g., '5T' for 5 minutes)
 
-    #print(df_resampled.mean()* 0.7/1.2)
-
-    #dfData = (df_resampled)
-    #imon = open('./imonvalues.txt', 'a')
-    #imon.write(df_resampled.to_string())
-
-    #imon = pd.DataFrame.to_string
-    #imon.write(imon)
-
-
-    #print(df_resampled)
-
-    # Step 5: Plot the resampled data
+    # Plot the resampled data
     plt.plot(df_resampled.index, df_resampled['IMon'], label="IMon (μA)", marker=".", color="blue")
 
     max_imonh = df_resampled['IMon'].max()  # Find the maximum IMonH value
@@ -342,129 +357,23 @@ def current_vs_time(start_date, end_date, timestamps, imon_values):
     # Show plot
     plt.show()
 
-# This is the skeleton of how we will be getting our graph for CAEN current vs time
-'''
-def current_vs_time(start_date, end_date):
-    # Step 1: Read the data from a text file
-    file_path = './data/LogFiles/CAENGECO2020.log'
+def accCharge_vs_time(start_date, end_date, timestamps, accumulated_charge):
+    ''' plots the accumulated charge over a specified amount of time '''
 
-    with open(file_path, 'r') as file:
-        data = file.read()
-
-    # Step 2: Parse data for timestamps and IMonH values
-    pattern = r"\[(.*?)\]:.*par \[IMonH\] val \[(.*?)\];"
-    matches = re.findall(pattern, data)
-
-    # Convert the extracted data into a DataFrame
-    timestamps = [datetime.fromisoformat(match[0]) for match in matches]
-    imon_values = [float(match[1]) for match in matches]
-
-    df = pd.DataFrame({'Timestamp': timestamps, 'IMon': imon_values})
+    df = pd.DataFrame({'Timestamp': timestamps, 'AccumulatedCharge': accumulated_charge})
     df.set_index('Timestamp', inplace=True)
 
-    # Step 3: Filter the data based on the provided date range
+    # Filter the data based on the provided date range 
     df_filtered = df[start_date:end_date]
+    
+    # Plot the resampled data
+    plt.plot(df_filtered.index, df_filtered['AccumulatedCharge'], label = 'Accumulated Charge (mC/cm)', marker=".", color="blue")
 
-    # Step 4: Resample data to reduce noise (e.g., take mean every minute)
-    df_resampled = df_filtered.resample('5min').mean()  # Resample per minute, adjust '1T' for different intervals (e.g., '5T' for 5 minutes)
-
-    print(df_resampled.mean()* 0.7/1.2)
-
-    #dfData = (df_resampled)
-    #imon = open('./imonvalues.txt', 'a')
-    #imon.write(df_resampled.to_string())
-
-    #imon = pd.DataFrame.to_string
-    #imon.write(imon)
-
-
-    #print(df_resampled)
-
-    # Step 5: Plot the resampled data
-    plt.plot(df_resampled.index, df_resampled['IMon'], label="IMon (μA)", marker=".", color="blue")
-
-    max_imonh = df_resampled['IMon'].max()  # Find the maximum IMonH value
-    top_limit = max_imonh * 1.2  # Increase the y-axis limit by 20%
-
+    max_acc_charge = df_filtered['AccumulatedCharge'].max() # find the max value of accumualted charge
+    top_limit = max_acc_charge * 1.2 # increase the y-axis limit by 20%
 
     # Customize the plot
-    plt.title(f"IMon Over Time ({start_date} to {end_date})")
-    plt.xlabel("Time (Days)")
-    plt.ylabel("IMon (μA)")
-    #plt.grid(True)
-    plt.xticks(rotation=45)
-    plt.ylim(0, top_limit)
-    plt.tight_layout()
-    plt.legend()
-
-    # Show plot
-    plt.show()
-'''
-
-def accCharge_vs_time():
-    print()
-
-    log_file_path ='./data/LogFiles/CAENGECO2020.log'
-
-    with open(log_file_path, 'r') as file:
-        log_data = file.read()
-
-    pattern = r"\[(.*?)\]:.*par \[IMonH\] val \[(.*?)\];"
-    matches = re.findall(pattern, log_data)
-
-    timestamps = [datetime.fromisoformat(match[0]) for match in matches]
-    imon_values = [float(match[1]) for match in matches]
-
-
-
-# instead of I vs T we are going to do accQ vs T
-def accCharge_vs_time(start_date, end_date):
-
-    #take in accumulated charge as a value and plot it versus time 
-
-    start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
-    end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
-
-    log_file_path = './data/LogFiles/CAENGECO2020.log'
-    acc_charge_file_path = './data/accChrg_vtime.txt'
-
-    # Step 1: Read log file and parse full timestamps
-    with open(log_file_path, 'r') as file:
-        log_data = file.read()
-
-    # Regex to extract full timestamps and IMonH values
-    pattern = r"\[(.*?)\]:.*par \[IMonH\] val \[(.*?)\];"
-    matches = re.findall(pattern, log_data)
-
-    # Convert matches to list of datetime objects for timestamps
-    timestamps = [datetime.fromisoformat(match[0]) for match in matches]
-
-    # Step 2: Load accumulated charge values
-    with open(acc_charge_file_path, 'r') as file:
-        acc_charge_values = [float(line.strip()) for line in file if line.strip()]
-
-    #print(acc_charge_values)
-
-    # Interpolate the accumulated charge values to match the number of timestamps
-    original_indices = np.linspace(0, len(acc_charge_values) - 1, num=len(acc_charge_values))
-    target_indices = np.linspace(0, len(acc_charge_values) - 1, num=len(timestamps))
-
-    interpolation_function = interp1d(original_indices, acc_charge_values, kind='linear')
-    resampled_acc_charge_values = interpolation_function(target_indices)
-
-    # Create DataFrame with matched timestamps and resampled accumulated charge values
-    df = pd.DataFrame({'Timestamp': timestamps, 'Accumulated Charge': resampled_acc_charge_values})
-    df.set_index('Timestamp', inplace=True)
-
-    # Step 3: Filter data based on start_date and end_date
-    df_filtered = df.loc[(df.index.date >= start_date) & (df.index.date <= end_date)]
-
-    max_acc_charge = df_filtered['Accumulated Charge'].max()
-    top_limit = max_acc_charge * 1.2
-
-    # Plot precise data
-    plt.plot(df_filtered.index, df_filtered['Accumulated Charge'], label="Accumulated Charge", color="blue")
-    plt.title(f"Accumulated Charge Over Time ({start_date} to {end_date})")
+    plt.title(f"Accumulated Charge from ({start_date} to {end_date})")
     plt.text(0.25, 0.94, f'Max Accumulated Charge Reached: {max_acc_charge:.2f}',
          horizontalalignment='center',
          verticalalignment='center',
@@ -473,11 +382,14 @@ def accCharge_vs_time(start_date, end_date):
          bbox=dict(facecolor='white', alpha=0.5))
     plt.xlabel("Time (Days)")
     plt.ylabel("Accumulated Charge (mC/cm)")
+    #plt.grid(True)
     plt.xticks(rotation=45)
     plt.ylim(0, top_limit)
-    plt.xlim(left=start_date)
     plt.tight_layout()
     plt.legend()
+
+    # Show plot
     plt.show()
 
-
+def accCharge_per_day():
+    print()
