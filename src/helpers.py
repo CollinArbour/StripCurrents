@@ -312,9 +312,6 @@ def mkGasGain(mscan_list, strip, hole, start_volt=3000, end_volt=3600, start_pla
     print('\n\tPerforming fit')
     mask_fit = (mscan_list[0] >= start_volt) & (mscan_list[0] <= end_volt)
 
-    #Find index of plateau starting and ending points
-    mask_plateau = (mscan_list[0] > start_plateau) & (mscan_list[0] <= end_plateau)
-
     #Find mean of plateau
     plateau_mean = getPlateauMean(mscan_list, start_plateau, end_plateau)
     
