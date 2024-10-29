@@ -44,6 +44,24 @@ def getCurveParams(mscan_list, mask_fit, p0=[0.001,0.01]):
     p1, cov = curve_fit(mExp, mscan_list[0][mask_fit], mscan_list[1][mask_fit],p0)
     return p1
 
+def getPlateauMean(mscan_list, start_range = 0, end_range = 500):
+    '''Helper Function used for mkGasGain and mkGasGainTable. calculates the mean value of the graph plateaus from 0(not inclusive) to 500(inclusive)'''
+
+    mask_plateau = (mscan_list[0] > start_range) & (mscan_list[0] <= end_range)
+    plateau_vals = mscan_list[1][mask_plateau]
+    plateau_mean = np.mean(plateau_vals)
+    
+    return plateau_mean
+
+def findGasGainVal(mscan_list, plateau_mean, valAtHV = 3600):
+    '''helper function used in mkGasGain and mkGasGainTable to find the gasGain value at a specific hv(default 3600)'''
+
+    gas_gain_list = mscan_list[1] / plateau_mean  
+    combined_points = zip(mscan_list[0], gas_gain_list)  
+    
+    gas_gain_val = list(point[1] for point in combined_points if point[0] == valAtHV) 
+    return gas_gain_val 
+
 def quadSum(a,b):
     return np.sqrt(a**2 + b**2)
 
@@ -272,10 +290,9 @@ def mkHeatMap_GaussSum(r,ps,pts=1000,mlabel='',save=False):
     else:
         plt.show()
 
-def mkGasGain(mscan_list, strip, hole, start_volt=3000, end_volt=3600, start_plateau=0, end_plateau=500, x_lower_lim=None, x_upper_lim=None, y_lower_lim=None, y_upper_lim=None, plot=True):    
+def mkGasGain(mscan_list, strip, hole, start_volt=3000, end_volt=3600, start_plateau=0, end_plateau=500, x_lower_lim=None, x_upper_lim=None, y_lower_lim=None, y_upper_lim=None):    
     '''
         Create figure showing GasGain. Code largely taken from mkRawFittedPlot.
-        returns plateau_mean and gas gain val for making table(for now)
 
         Arguments:
             -mscan_list: list of HV, avg Current Vals, and stderr
@@ -288,7 +305,6 @@ def mkGasGain(mscan_list, strip, hole, start_volt=3000, end_volt=3600, start_pla
             -x_upper_lim: upper limit for graph zoom on x axis
             -y_lower_lim: lower limit for graph zoom on y axis
             -y_upper_lim: upper limit for graph zoom on y axis
-            -plot: whether to plot, might not even implement this and instead just move calculations to another method so this doesnt have to be called.
 
     '''
     
@@ -300,19 +316,15 @@ def mkGasGain(mscan_list, strip, hole, start_volt=3000, end_volt=3600, start_pla
     mask_plateau = (mscan_list[0] > start_plateau) & (mscan_list[0] <= end_plateau)
 
     #Find mean of plateau
-    plateau_vals = mscan_list[1][mask_plateau]
-    plateau_mean = np.mean(plateau_vals) 
+    plateau_mean = getPlateauMean(mscan_list, start_plateau, end_plateau)
     
     # Gas gain value
     # Gas gain = avg current / plateau mean
-    mscan_list[1] /= plateau_mean
+    gas_gain_list = mscan_list[1] / plateau_mean
     
     #get curve fit
     p0 = [0.001,0.01]
-    print("TEST HV RANGE: ", mscan_list[0][mask_fit])
-    print("TEST GASGAIN RANGE: ", mscan_list[1][mask_fit])
-
-    p1,cov = curve_fit(mExp, mscan_list[0][mask_fit], mscan_list[1][mask_fit], p0)
+    p1,cov = curve_fit(mExp, mscan_list[0][mask_fit], gas_gain_list[mask_fit], p0)
 
     #x and y vals for exp plotting
     xs = np.linspace(0,3850,2000)
@@ -320,7 +332,7 @@ def mkGasGain(mscan_list, strip, hole, start_volt=3000, end_volt=3600, start_pla
 
     # Create raw figure
     print('\tCreating raw figure')
-    plt.errorbar(mscan_list[0], mscan_list[1], marker='.',linestyle='')
+    plt.errorbar(mscan_list[0], gas_gain_list, marker='.',linestyle='')
     plt.plot(xs,ys)
 
     #show line of fit range NOTE: -1 needed to prevent error sometimes?
@@ -340,16 +352,11 @@ def mkGasGain(mscan_list, strip, hole, start_volt=3000, end_volt=3600, start_pla
 
     plt.ylabel('Gas Gain')
     #Display Graph for Testing
-    #plt.show()
+    plt.show()
 
     #Save and close graph
     #plt.savefig(f'./plots/HV_Scans/GasGain/Graphs/{strip}.png', format='png', dpi=400)
     plt.close()
-
-    combined_points = zip(mscan_list[0], mscan_list[1])
-   
-    gas_gain_val = list(point[1] for point in combined_points if point[0] == 3600)
-    return plateau_mean, gas_gain_val
     
 def mkRawFittedPlot(mscan_list, strip, start_volt=3000, end_volt=3550):
     '''
@@ -533,17 +540,31 @@ def mkSpaceChargePlot(mscan_list, strip, start_volt=3000, end_volt=3600):
     #plt.savefig(f'./plots/HV_Scans/{strip}_SpaceCharge.png',format='png',dpi=400)
     plt.close()
 
-def mkGasGainTable(table_plateaus, table_gasGain, table_hole, table_strip):
+def mkGasGainTable(array_mscan_list, table_hole, table_strip):
     '''
         Creates a table of values to show gas gain across different runs.
-
-        Arguments:
-            -table_plateaus: numpy array of plateau mean values (returned from mkGasGain and put in as parameter)
-            -table_gasGain: numpy array of gasGain value at 3600v for each run (also returned from mkGasGain and put in as parameter)
-            -table_holes: array of hole values for labeling holes
+       
+         Arguments:
+            -array_mscan_list: for calculating plateau and gasGain values
+            -table_hole: array of hole values for labeling holes
             -table_strip: array of strip values for labeling strips
+
     '''
 
+    #Get plateau and gasGain Values
+    table_plateaus = []
+    table_gasGain = []
+    for mscan_list in array_mscan_list:
+
+        plateau = getPlateauMean(mscan_list)
+        gasGain = findGasGainVal(mscan_list, plateau)
+
+        table_plateaus.append(plateau)
+        table_gasGain.append(gasGain)
+
+
+
+        
     #Round the plateau mean values and the gas gain values
     rounded_plateaus = np.round(table_plateaus, 4)
     rounded_gasGain = np.round(table_gasGain, 1)
@@ -590,8 +611,8 @@ def mkGasGainTable(table_plateaus, table_gasGain, table_hole, table_strip):
     
 
     #show table for testing
-    #plt.show()
+    plt.show()
     
     #Save and close table
-    plt.savefig(f'./plots/HV_Scans/GasGain/Tables/GasGain_refMeasures.png',format='png',dpi=400)
+    #plt.savefig(f'./plots/HV_Scans/GasGain/Tables/GasGain_refMeasures.png',format='png',dpi=400)
     plt.close()
