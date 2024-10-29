@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 '''
 
-This File is currently being used to process the HV_Scans data files, using the DataFile class, and call upon functions in the helpers class to graph the data.
-It also does a small amount of data processing (matching function) and data verifying ("more noise than signal check") before calling upon the graphing functions.
+This File is currently being used to process the HV_Scans data files and graph the data using the functions in the helpers class
 
 '''
 from re import T

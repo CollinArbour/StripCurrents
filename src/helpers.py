@@ -12,7 +12,7 @@ import src.DataFile as df
 
 ## Functions
 def createRun(run_nm, criteria, src=True):
-    '''Does Basic Data processing using the dataFile class'''
+    '''Does Basic Data processing using the dataFile class. made into a function for code simplification.'''
     if src == False:
         dataObj = df.DataFile(f'{run_nm[7:]}_dark')
         dataObj.parseDataFileText(f'./data/HV_Scans/{run_nm}_dark.txt')
@@ -28,7 +28,7 @@ def createRun(run_nm, criteria, src=True):
 def matching(src,drk):
     '''
         This function takes in a source scan and dark scan, finds the Matching HV pairs between the two, and removes any nonmatching HV points in either one.
-
+        moved into helpers because it is being used in multiple files
         Arguments:
             -src: hvscan with source
             -drk: hvscan without source
@@ -40,7 +40,7 @@ def matching(src,drk):
     return src[:,src_idxs],drk[:,drk_idxs]
 
 def getCurveParams(mscan_list, mask_fit, p0=[0.001,0.01]):
-    '''Moving curve fit calculation to this to remove space charge reliance on raw fitted'''
+    '''Moving curve fit calculation to this since used several times'''
     p1, cov = curve_fit(mExp, mscan_list[0][mask_fit], mscan_list[1][mask_fit],p0)
     return p1
 
