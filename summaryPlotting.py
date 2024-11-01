@@ -74,7 +74,6 @@ for i,strip in enumerate(strip_numbers):
     pdrk_hvscan = pddf.getHVScan(src=False)
     psrc_hvscan,pdrk_hvscan = matching(psrc_hvscan,pdrk_hvscan)
 
-
     print('\tSubtracting background')
     rcorrected_hvscan = rsrc_hvscan[1] - rdrk_hvscan[1]
     pcorrected_hvscan = psrc_hvscan[1] - pdrk_hvscan[1]
@@ -87,7 +86,7 @@ for i,strip in enumerate(strip_numbers):
     # Plotting all 4 measurements for each strip
     
     # Selecting Data
-    lims = (3350,3800)
+    lims = (3400,3800)
     rmask = (rsrc_hvscan[0] > lims[0]) * (rsrc_hvscan[0] < lims[1])
     rdrkmask = (rdrk_hvscan[0] > lims[0]) * (rdrk_hvscan[0] < lims[1])
 
@@ -109,13 +108,36 @@ for i,strip in enumerate(strip_numbers):
     pdrkhv = pdrk_hvscan[0][pdrkmask]
     pdrkI = pdrk_hvscan[1][pdrkmask]
     pdrkerr = pdrk_hvscan[2][pdrkmask]
+    #print(pdrkerr)    
+
+    plt.errorbar(rhv,rI,yerr=np.abs(rerr),linestyle='',label='HV Scan 1 Data',marker='1',color='blue')
+    plt.errorbar(rdrkhv,rdrkI,yerr=np.abs(rdrkerr),linestyle='',label='HV Scan 1 Dark',marker='2',color='blue')
+
+    plt.errorbar(phv,pI,yerr=np.abs(perr),linestyle='',label='HV Scan 2 Data',marker='+',color='green')
+    plt.errorbar(pdrkhv,pdrkI,yerr=np.abs(pdrkerr),linestyle='',label='HV Scan 2 Dark',marker='x',color='green')
+
+    #this creates a differnt set of graphing instructions for lower values
+    if lims[0] == 0:
+
+
+        avg_rI = np.mean(rI)
+        avg_rdrkI = np.mean(rdrkI)
+        avg_pI = np.mean(pI)
+        avg_pdrkI = np.mean(pdrkI)
+
+        plt.axhline(y=avg_rI, color='blue', linestyle='--', alpha=0.2)
+        plt.axhline(y=avg_rdrkI, color='blue', linestyle='-.', alpha=0.2)
+        plt.axhline(y=avg_pI, color='green', linestyle='--', alpha=0.2)
+        plt.axhline(y=avg_pdrkI, color='green', linestyle='-.', alpha=0.2)
+
+        plt.text(x=-125, y=avg_rI, s=f'{avg_rI:.2e}', va='center', color='blue')
+        plt.text(x=-125, y=avg_rdrkI, s=f'{avg_rdrkI:.2e}', va='center', color='blue')
+        plt.text(x=-125, y=avg_pI, s=f'{avg_pI:.2e}', va='center', color='green')
+        plt.text(x=-125, y=avg_pdrkI, s=f'{avg_pdrkI:.2e}', va='center', color='green')
+    
     
 
-    plt.errorbar(rhv,rI,yerr=rerr,linestyle='',label='Ref. Data',marker='1',color='blue')
-    plt.errorbar(rdrkhv,rdrkI,yerr=rdrkerr,linestyle='',label='Ref. Dark',marker='2',color='blue')
 
-    plt.errorbar(phv,pI,yerr=perr,linestyle='',label='Plt. Data',marker='+',color='green')
-    plt.errorbar(pdrkhv,pdrkI,yerr=pdrkerr,linestyle='',label='Plt. Dark',marker='x',color='green')
 
     #plt.xlim((0,600))
     #plt.xlim((3400,3800))
@@ -124,8 +146,10 @@ for i,strip in enumerate(strip_numbers):
     plt.xlabel('HV (V)')
     plt.ylabel('Avg. I (nA)')
     plt.yscale('symlog')
-
+    plt.tight_layout()
     plt.legend()
+
+    #plt.show()
 
     plt.savefig(f'./plots/HV_Scans/all/S{strip}_GasGain_RefAndPlat_uncorrected_highHV_log.png',format='png',dpi=400)
     #plt.savefig(f'./plots/HV_Scans/all/S{strip}_GasGain_RefAndPlat_uncorrected_plateau_log.png',format='png',dpi=400)
