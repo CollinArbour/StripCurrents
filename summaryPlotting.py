@@ -24,6 +24,13 @@ stripGap = 0.35 ##mm <- ME1/1 chamber TDR (ME2/1 is 0.5 mm)
 
 run_nms = []
 
+'''
+eventually we have to move to a different naming convention
+    for example we are naming each consecutive series "HV_Scan_3, HV_Scan_4, etc..."
+'''
+
+
+
 strip_numbers = [2,6,10]
 ref_nms = ['241001_refMeasures_S2','241002_refMeasures_S6','241002_refMeasures_S10']
 plt_nms = ['241014_S2_Plateau','241014_S6_Plateau','241015_S10_Plateau']
@@ -86,7 +93,7 @@ for i,strip in enumerate(strip_numbers):
     # Plotting all 4 measurements for each strip
     
     # Selecting Data
-    lims = (3400,3800)
+    lims = (0,3800)
     rmask = (rsrc_hvscan[0] > lims[0]) * (rsrc_hvscan[0] < lims[1])
     rdrkmask = (rdrk_hvscan[0] > lims[0]) * (rdrk_hvscan[0] < lims[1])
 
@@ -110,16 +117,19 @@ for i,strip in enumerate(strip_numbers):
     pdrkerr = pdrk_hvscan[2][pdrkmask]
     #print(pdrkerr)    
 
-    plt.errorbar(rhv,rI,yerr=np.abs(rerr),linestyle='',label='HV Scan 1 Data',marker='1',color='blue')
-    plt.errorbar(rdrkhv,rdrkI,yerr=np.abs(rdrkerr),linestyle='',label='HV Scan 1 Dark',marker='2',color='blue')
+    #plt.errorbar(rhv,rI,yerr=np.abs(rerr),linestyle='',label='HV Scan 1 Data',marker='1',color='blue')
 
-    plt.errorbar(phv,pI,yerr=np.abs(perr),linestyle='',label='HV Scan 2 Data',marker='+',color='green')
-    plt.errorbar(pdrkhv,pdrkI,yerr=np.abs(pdrkerr),linestyle='',label='HV Scan 2 Dark',marker='x',color='green')
+    #plt.errorbar(phv,pI,yerr=np.abs(perr),linestyle='',label='HV Scan 2 Data',marker='+',color='green')
 
     #this creates a differnt set of graphing instructions for lower values
-    if lims[0] == 0:
+    '''if lims[0] == 0:
 
 
+        plt.errorbar(rdrkhv,rdrkI,yerr=np.abs(rdrkerr),linestyle='',label='HV Scan 1 Dark',marker='2',color='blue')
+        plt.errorbar(pdrkhv,pdrkI,yerr=np.abs(pdrkerr),linestyle='',label='HV Scan 2 Dark',marker='x',color='green')
+
+
+        plt.yscale('symlog')
         avg_rI = np.mean(rI)
         avg_rdrkI = np.mean(rdrkI)
         avg_pI = np.mean(pI)
@@ -134,9 +144,9 @@ for i,strip in enumerate(strip_numbers):
         plt.text(x=-125, y=avg_rdrkI, s=f'{avg_rdrkI:.2e}', va='center', color='blue')
         plt.text(x=-125, y=avg_pI, s=f'{avg_pI:.2e}', va='center', color='green')
         plt.text(x=-125, y=avg_pdrkI, s=f'{avg_pdrkI:.2e}', va='center', color='green')
-    
-    
-
+    '''
+    #plt.plot(rhv,rI,linestyle='-',label='HV Scan 1 Data',marker='',color='blue')
+    plt.plot(phv,pI,linestyle='-',label='HV Scan 2 Data',marker='.',color='green')
 
 
     #plt.xlim((0,600))
@@ -145,13 +155,17 @@ for i,strip in enumerate(strip_numbers):
     plt.title(f'Strip {strip} Current over HV Scan')
     plt.xlabel('HV (V)')
     plt.ylabel('Avg. I (nA)')
-    plt.yscale('symlog')
+    plt.yscale('log')
     plt.tight_layout()
     plt.legend()
+    plt.grid(linestyle='-', alpha=0.75, which='both')
 
-    #plt.show()
+    plt.show()
 
-    plt.savefig(f'./plots/HV_Scans/all/S{strip}_GasGain_RefAndPlat_uncorrected_highHV_log.png',format='png',dpi=400)
+
+    #plt.savefig(f'./plots/HV_Scans/all/full_range/S{strip}_GasGain_HV_Scan2_full_range.png',format='png',dpi=400)
+    #plt.savefig(f'./plots/HV_Scans/all/full_range/S{strip}_GasGain_HV_Scan_full_range.png',format='png',dpi=400)
+    #plt.savefig(f'./plots/HV_Scans/all/S{strip}_GasGain_RefAndPlat_uncorrected_highHV_log.png',format='png',dpi=400)
     #plt.savefig(f'./plots/HV_Scans/all/S{strip}_GasGain_RefAndPlat_uncorrected_plateau_log.png',format='png',dpi=400)
     plt.close()
     continue
