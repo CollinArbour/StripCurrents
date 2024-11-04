@@ -34,7 +34,14 @@ additional_ref = ['240820_refMeasures_S7']
 mruns = [ref_nms,plt_nms,pst_nms]
 mmarks = ['1','2','x']
 mcolors = ['blue','green','black']
-lims = (10,600)
+lims = (3400,3800)
+'''
+important lims:
+    low: (0,600)
+    high:(3400,3800)
+    full:(0,3800)
+'''
+
 
 # Handling Strip Scans
 for i,strip in enumerate(strip_numbers):
@@ -69,65 +76,64 @@ for i,strip in enumerate(strip_numbers):
         corrected_hvscan = msrc_hvscan[1] - mdrk_hvscan[1]
         #if any(corrected_hvscan < 0):
         #    print('\t\tError More noise than signal!')
-
+        
         hvscan = [msrc_hvscan[0], corrected_hvscan, quadSum(msrc_hvscan[2],mdrk_hvscan[2])]
 
         smask = (src_hvscan[0] > lims[0]) * (src_hvscan[0] < lims[1])
         dmask = (drk_hvscan[0] > lims[0]) * (drk_hvscan[0] < lims[1])
 
-    
-    #print(pdrkerr)    
 
-    #plt.errorbar(rhv,rI,yerr=np.abs(rerr),linestyle='',label='HV Scan 1 Data',marker='1',color='blue')
+        if lims[0] == 0 and lims[1] == 600:
+            '''
+            this is the low HV scan 
+            needs the current values and the dark rate values to be noted on here
+            '''
+            plt.errorbar(src_hvscan[0][smask],src_hvscan[1][smask],yerr=src_hvscan[2][smask],linestyle='',marker=mmarks[j],color=mcolors[j],label=f'Scan {j+1}')
+            plt.errorbar(drk_hvscan[0][dmask],drk_hvscan[1][dmask],yerr=drk_hvscan[2][dmask],linestyle='',marker=mmarks[j],color=mcolors[j],label=f'Scan {j+1} Dark')
+            
+            avg_hvscan = np.mean(src_hvscan[1][smask])
+            avg_hvscan_drk = np.mean(drk_hvscan[1][dmask])
 
-    #plt.errorbar(phv,pI,yerr=np.abs(perr),linestyle='',label='HV Scan 2 Data',marker='+',color='green')
+            plt.axhline(y=avg_hvscan, color=mcolors[j], linestyle='--', alpha=0.2)
+            plt.axhline(y=avg_hvscan_drk, color=mcolors[j], linestyle='-.', alpha=0.2)
+            
+            plt.text(x=-125, y=avg_hvscan, s=f'{avg_hvscan:.2e}', va='center', color=mcolors[j])
+            plt.text(x=-125, y=avg_hvscan_drk, s=f'{avg_hvscan_drk:.2e}', va='center', color=mcolors[j])
 
-    #this creates a differnt set of graphing instructions for lower values
-    '''if lims[0] == 0:
-
-
-        plt.errorbar(rdrkhv,rdrkI,yerr=np.abs(rdrkerr),linestyle='',label='HV Scan 1 Dark',marker='2',color='blue')
-        plt.errorbar(pdrkhv,pdrkI,yerr=np.abs(pdrkerr),linestyle='',label='HV Scan 2 Dark',marker='x',color='green')
-
-
-        plt.yscale('symlog')
-        avg_rI = np.mean(rI)
-        avg_rdrkI = np.mean(rdrkI)
-        avg_pI = np.mean(pI)
-        avg_pdrkI = np.mean(pdrkI)
-
-        plt.axhline(y=avg_rI, color='blue', linestyle='--', alpha=0.2)
-        plt.axhline(y=avg_rdrkI, color='blue', linestyle='-.', alpha=0.2)
-        plt.axhline(y=avg_pI, color='green', linestyle='--', alpha=0.2)
-        plt.axhline(y=avg_pdrkI, color='green', linestyle='-.', alpha=0.2)
-
-        plt.text(x=-125, y=avg_rI, s=f'{avg_rI:.2e}', va='center', color='blue')
-        plt.text(x=-125, y=avg_rdrkI, s=f'{avg_rdrkI:.2e}', va='center', color='blue')
-        plt.text(x=-125, y=avg_pI, s=f'{avg_pI:.2e}', va='center', color='green')
-        plt.text(x=-125, y=avg_pdrkI, s=f'{avg_pdrkI:.2e}', va='center', color='green')
-    '''
-    #plt.plot(rhv,rI,linestyle='-',label='HV Scan 1 Data',marker='',color='blue')
-    #plt.plot(phv,pI,linestyle='-',label='HV Scan 2 Data',marker='.',color='green')
+            plt.yscale('symlog')
+            plt.xlim(left=0)
 
 
-    #plt.xlim((0,600))
-    #plt.xlim((3400,3800))
-    plt.errorbar(src_hvscan[0][smask],src_hvscan[1][smask],yerr=src_hvscan[2][smask],linestyle='',marker=mmarks[j],color=mcolors[j],label=f'Scan {j+1}')
-    plt.errorbar(drk_hvscan[0][dmask],drk_hvscan[1][dmask],yerr=drk_hvscan[2][dmask],linestyle='',marker=mmarks[j],color=mcolors[j],label=f'Scan {j+1} Dark')
+        if lims[0] == 3400 and lims[1] == 3800:
+            '''
+            this is the hv scan
+            dark rate values are not necessary since they are so small
+            '''
+            plt.errorbar(src_hvscan[0][smask],src_hvscan[1][smask],yerr=src_hvscan[2][smask],linestyle='',marker=mmarks[j],color=mcolors[j],label=f'Scan {j+1}')
+            plt.xlim(left=3400)
 
+
+        if lims[0] == 0 and lims[1] == 3800:
+            '''
+            this is the full ranged scan
+            will be plotted in a true log scale with log grid lines, dark rate not needed but use the corrected values
+            find a way to use corrected_hvscan
+            '''
+            plt.plot(src_hvscan[0][smask], src_hvscan[1][smask],linestyle='-', color=mcolors[j], label=f'Scan {j+1}')
+            plt.yscale('log')
+            plt.grid(linestyle='-', alpha=0.75, which='both')
+            plt.xlim(left=0)
+            
+        
     plt.title(f'Strip {strip} Current over HV Scan')
     plt.xlabel('HV (V)')
     plt.ylabel('Avg. I (nA)')
-    plt.yscale('log')
     plt.tight_layout()
     plt.legend()
-    plt.grid(linestyle='-', alpha=0.75, which='both')
+    plt.show()
 
-    #plt.savefig(f'./plots/HV_Scans/all/full_range/S{strip}_GasGain_HV_Scan2_full_range.png',format='png',dpi=400)
-    #plt.savefig(f'./plots/HV_Scans/all/full_range/S{strip}_GasGain_HV_Scan_full_range.png',format='png',dpi=400)
-    #plt.savefig(f'./plots/HV_Scans/all/S{strip}_GasGain_RefAndPlat_uncorrected_highHV_log.png',format='png',dpi=400)
-    #plt.savefig(f'./plots/HV_Scans/all/S{strip}_GasGain_RefAndPlat_uncorrected_plateau_log.png',format='png',dpi=400)
-
-    plt.savefig(f'./plots/HV_Scans/all/S{strip}_hvScan_lowHV_log.png',format='png',dpi=400)
+    #plt.savefig(f'./plots/HV_Scans/all/S{strip}_hvScan_lowHV_log.png',format='png',dpi=400)
     #plt.savefig(f'./plots/HV_Scans/all/S{strip}_hvScan_highHV_log.png',format='png',dpi=400)
-    plt.close()
+    #plt.savefig(f'./plots/HV_Scans/all/S{strip}_hvScan_full_range_log.png',format='png',dpi=400)
+
+    

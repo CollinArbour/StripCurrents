@@ -427,3 +427,13 @@ def accCharge_per_day(start_date, end_date, timestamps, accumulated_charge):
     print(daily_accumulated_charge)
 
 
+'''
+    here im going to in functionalize the summaryPlotting.py file
+'''
+
+def top_limit(y):
+    '''pass any array or list of values to find the max + 20% for cleaner graphs '''
+    top_limit = y.max()
+    top_limit *= 1.2
+
+    return top_limit
