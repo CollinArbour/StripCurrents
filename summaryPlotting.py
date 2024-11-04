@@ -24,97 +24,58 @@ stripGap = 0.35 ##mm <- ME1/1 chamber TDR (ME2/1 is 0.5 mm)
 
 run_nms = []
 
-'''
-eventually we have to move to a different naming convention
-    for example we are naming each consecutive series "HV_Scan_3, HV_Scan_4, etc..."
-'''
-
-
-
-strip_numbers = [2,6,10]
+strip_numbers = [2,6]
+#strip_numbers = [2,6,10]
 ref_nms = ['241001_refMeasures_S2','241002_refMeasures_S6','241002_refMeasures_S10']
 plt_nms = ['241014_S2_Plateau','241014_S6_Plateau','241015_S10_Plateau']
-
+pst_nms = ['241029_S2_HVScan03','241029_S6_HVScan03']
 additional_ref = ['240820_refMeasures_S7']
+
+mruns = [ref_nms,plt_nms,pst_nms]
+mmarks = ['1','2','x']
+mcolors = ['blue','green','black']
+lims = (10,600)
 
 # Handling Strip Scans
 for i,strip in enumerate(strip_numbers):
     criteria = {'strip':strip} 
 
-    # Load HV Scan with source
-    print(f'Loading Data for strip: {strip}')
-    rsdf = df.DataFile(ref_nms[i])
-    psdf = df.DataFile(plt_nms[i])
+    print(f'Loading Data and Dark Currents for strip: {strip}')
 
-    rsdf.parseDataFileText(f'./data/HV_Scans/{ref_nms[i]}.txt')
-    psdf.parseDataFileText(f'./data/HV_Scans/{plt_nms[i]}.txt')
+    for j,run in enumerate(mruns):
+        # Load HV Scan with source
+        print(f'\tFor run: {run[i]}')
+        sdf = df.DataFile(run[i])
+        sdf.parseDataFileText(f'./data/HV_Scans/{run[i]}.txt')
+        sdf.filterRuns(criteria)
+        sdf.sortDataRuns('hv')
 
-    rsdf.filterRuns(criteria)
-    psdf.filterRuns(criteria)
+        # Load Dark Current runs
+        print(f'\tFor dark run: {run[i]}')
+        ddf = df.DataFile(f'{run[i]}_dark')
+        ddf.parseDataFileText(f'./data/HV_Scans/{run[i]}_dark.txt')
+        ddf.filterRuns(criteria)
+        ddf.sortDataRuns('hv')
 
-    rsdf.sortDataRuns('hv')
-    psdf.sortDataRuns('hv')
+        # Match the data scans to the dark scans
+        print('\t\tMatching the HV points between the data and dark scans')
 
-    # Load Dark Current runs
-    print(f'Loading Dark Currents for S{strip}')
-    rddf = df.DataFile(ref_nms[i])
-    pddf = df.DataFile(plt_nms[i])
+        # Ref Measurements
+        src_hvscan = sdf.getHVScan()
+        drk_hvscan = ddf.getHVScan(src=False)
+        msrc_hvscan,mdrk_hvscan = matching(src_hvscan,drk_hvscan)
 
-    rddf.parseDataFileText(f'./data/HV_Scans/{ref_nms[i]}_dark.txt')
-    pddf.parseDataFileText(f'./data/HV_Scans/{plt_nms[i]}_dark.txt')
+        print('\t\tSubtracting background')
+        corrected_hvscan = msrc_hvscan[1] - mdrk_hvscan[1]
+        #if any(corrected_hvscan < 0):
+        #    print('\t\tError More noise than signal!')
 
-    rddf.filterRuns(criteria)
-    pddf.filterRuns(criteria)
+        hvscan = [msrc_hvscan[0], corrected_hvscan, quadSum(msrc_hvscan[2],mdrk_hvscan[2])]
 
-    rddf.sortDataRuns('hv')
-    pddf.sortDataRuns('hv')
+        smask = (src_hvscan[0] > lims[0]) * (src_hvscan[0] < lims[1])
+        dmask = (drk_hvscan[0] > lims[0]) * (drk_hvscan[0] < lims[1])
 
-    # Match the data  scans to the dark scans
-    print('\tMatching the HV points between the data and dark scans')
-    # Ref Measurements
-    rsrc_hvscan = rsdf.getHVScan()
-    rdrk_hvscan = rddf.getHVScan(src=False)
-    rsrc_hvscan,rdrk_hvscan = matching(rsrc_hvscan,rdrk_hvscan)
-
-    # Plateau Measurements
-    psrc_hvscan = psdf.getHVScan()
-    pdrk_hvscan = pddf.getHVScan(src=False)
-    psrc_hvscan,pdrk_hvscan = matching(psrc_hvscan,pdrk_hvscan)
-
-    print('\tSubtracting background')
-    rcorrected_hvscan = rsrc_hvscan[1] - rdrk_hvscan[1]
-    pcorrected_hvscan = psrc_hvscan[1] - pdrk_hvscan[1]
-    #if any(corrected_hvscan < 0):
-    #    print('\t\tError More noise than signal!')
-
-    mrhvscan = [rsrc_hvscan[0], rcorrected_hvscan, quadSum(rsrc_hvscan[2],rdrk_hvscan[2])]
-    mphvscan = [psrc_hvscan[0], pcorrected_hvscan, quadSum(psrc_hvscan[2],pdrk_hvscan[2])]
-
-    # Plotting all 4 measurements for each strip
     
-    # Selecting Data
-    lims = (0,3800)
-    rmask = (rsrc_hvscan[0] > lims[0]) * (rsrc_hvscan[0] < lims[1])
-    rdrkmask = (rdrk_hvscan[0] > lims[0]) * (rdrk_hvscan[0] < lims[1])
-
-    pmask = (psrc_hvscan[0] > lims[0]) * (psrc_hvscan[0] < lims[1])
-    pdrkmask = (pdrk_hvscan[0] > lims[0]) * (pdrk_hvscan[0] < lims[1])
-
-    rhv = rsrc_hvscan[0][rmask]
-    rI = rsrc_hvscan[1][rmask]
-    rerr = rsrc_hvscan[2][rmask]
-
-    rdrkhv = rdrk_hvscan[0][rdrkmask]
-    rdrkI = rdrk_hvscan[1][rdrkmask]
-    rdrkerr = rdrk_hvscan[2][rdrkmask]
-
-    phv = psrc_hvscan[0][pmask]
-    pI = psrc_hvscan[1][pmask]
-    perr = psrc_hvscan[2][pmask]
-
-    pdrkhv = pdrk_hvscan[0][pdrkmask]
-    pdrkI = pdrk_hvscan[1][pdrkmask]
-    pdrkerr = pdrk_hvscan[2][pdrkmask]
     #print(pdrkerr)    
 
     #plt.errorbar(rhv,rI,yerr=np.abs(rerr),linestyle='',label='HV Scan 1 Data',marker='1',color='blue')
@@ -146,11 +107,13 @@ for i,strip in enumerate(strip_numbers):
         plt.text(x=-125, y=avg_pdrkI, s=f'{avg_pdrkI:.2e}', va='center', color='green')
     '''
     #plt.plot(rhv,rI,linestyle='-',label='HV Scan 1 Data',marker='',color='blue')
-    plt.plot(phv,pI,linestyle='-',label='HV Scan 2 Data',marker='.',color='green')
+    #plt.plot(phv,pI,linestyle='-',label='HV Scan 2 Data',marker='.',color='green')
 
 
     #plt.xlim((0,600))
     #plt.xlim((3400,3800))
+    plt.errorbar(src_hvscan[0][smask],src_hvscan[1][smask],yerr=src_hvscan[2][smask],linestyle='',marker=mmarks[j],color=mcolors[j],label=f'Scan {j+1}')
+    plt.errorbar(drk_hvscan[0][dmask],drk_hvscan[1][dmask],yerr=drk_hvscan[2][dmask],linestyle='',marker=mmarks[j],color=mcolors[j],label=f'Scan {j+1} Dark')
 
     plt.title(f'Strip {strip} Current over HV Scan')
     plt.xlabel('HV (V)')
@@ -160,44 +123,11 @@ for i,strip in enumerate(strip_numbers):
     plt.legend()
     plt.grid(linestyle='-', alpha=0.75, which='both')
 
-    plt.show()
-
-
     #plt.savefig(f'./plots/HV_Scans/all/full_range/S{strip}_GasGain_HV_Scan2_full_range.png',format='png',dpi=400)
     #plt.savefig(f'./plots/HV_Scans/all/full_range/S{strip}_GasGain_HV_Scan_full_range.png',format='png',dpi=400)
     #plt.savefig(f'./plots/HV_Scans/all/S{strip}_GasGain_RefAndPlat_uncorrected_highHV_log.png',format='png',dpi=400)
     #plt.savefig(f'./plots/HV_Scans/all/S{strip}_GasGain_RefAndPlat_uncorrected_plateau_log.png',format='png',dpi=400)
-    plt.close()
-    continue
 
-    # Plotting wholerange (obsolete probably)
-
-    lims = (25,525)
-
-    refplatpts = mrhvscan[1][(mrhvscan[0] > lims[0]) * (mrhvscan[0] < lims[1])]
-    pltplatpts = mphvscan[1][(mphvscan[0] > lims[0]) * (mphvscan[0] < lims[1])]
-
-    ref_plat = np.average(refplatpts)
-    plt_plat = np.average(pltplatpts)
-
-    print(f'***Strip {strip} ref plat: {ref_plat} \t plateau plat: {plt_plat}')
-
-
-    # Create raw figure
-    print('\tCreating raw figure')
-    plt.errorbar(mrhvscan[0],mrhvscan[1]/ref_plat,yerr=mrhvscan[2]/ref_plat,marker='.',linestyle='',label='Ref Meas.')
-    plt.errorbar(mphvscan[0],mphvscan[1]/plt_plat,yerr=mphvscan[2]/plt_plat,marker='.',linestyle='',label='Plt Meas.')
-
-    #plt.plot(xs,ys)
-    #plt.axvline(mhvscan[0][strt_fit],color='grey',alpha=0.3,linestyle='--')
-    #plt.axvline(mhvscan[0][stop_fit],color='grey',alpha=0.3,linestyle='--')
-
-    plt.title(f'{strip} Strip Current over HV Scan')
-    plt.xlabel('HV (V)')
-    plt.ylabel('Avg. I (nA)')
-    plt.yscale('symlog')
-
-    plt.legend()
-
-    plt.savefig(f'./plots/HV_Scans/all/S{strip}_GasGain_RefAndPlat_log.png',format='png',dpi=400)
+    plt.savefig(f'./plots/HV_Scans/all/S{strip}_hvScan_lowHV_log.png',format='png',dpi=400)
+    #plt.savefig(f'./plots/HV_Scans/all/S{strip}_hvScan_highHV_log.png',format='png',dpi=400)
     plt.close()
