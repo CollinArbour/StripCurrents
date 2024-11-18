@@ -437,3 +437,21 @@ def top_limit(y):
     top_limit *= 1.2
 
     return top_limit
+
+def getPlateauMean(mscan_list, start_range = 0, end_range = 500):
+    '''Helper Function used for mkGasGain and mkGasGainTable. calculates the mean value of the graph plateaus from 0(not inclusive) to 500(inclusive)'''
+
+    mask_plateau = (mscan_list[0] > start_range) & (mscan_list[0] <= end_range)
+    plateau_vals = mscan_list[1][mask_plateau]
+    plateau_mean = np.mean(plateau_vals)
+    
+    return plateau_mean
+
+def findGasGainVal(mscan_list, plateau_mean, valAtHV = 3600):
+    '''helper function used in mkGasGain and mkGasGainTable to find the gasGain value at a specific hv(default 3600)'''
+
+    gas_gain_list = mscan_list[1] / plateau_mean  
+    combined_points = zip(mscan_list[0], gas_gain_list)  
+    
+    gas_gain_val = list(point[1] for point in combined_points if point[0] == valAtHV) 
+    return gas_gain_val 
