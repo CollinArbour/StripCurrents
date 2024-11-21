@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 import scipy.integrate as integrate
+import os
 
 
 import pandas as pd
@@ -455,3 +456,82 @@ def findGasGainVal(mscan_list, plateau_mean, valAtHV = 3600):
     
     gas_gain_val = list(point[1] for point in combined_points if point[0] == valAtHV) 
     return gas_gain_val 
+
+def mruns(tmbbase,dir):
+    mdir = f'{tmbbase}/{dir}'
+    fls_present = os.listdir(mdir)
+    
+    mdata_runs = []
+    mbkg_runs = []
+    
+    uncat = []
+    
+    for flnm in fls_present:
+        if '.txt'  not in flnm:
+            continue
+        if 'README' in flnm:
+            continue
+        if 'hole' in flnm:
+            mdata_runs.append(flnm)
+        elif 'dark' in flnm:
+            mbkg_runs.append(flnm)
+        else:
+            uncat.append(flnm)
+    
+    if len(uncat) > 0:
+        print('ERROR: Unrecognized file(s) not sorted:')
+        print(uncat)
+        
+    return sorted(mdata_runs),sorted(mbkg_runs)
+
+def findRates(lines):
+    """Extract rates from the given lines."""
+    #alct_rate, clct_rate, tmb_rate = None, None, None
+    for line in lines:
+        if '0ALCT' in line and '10ALCT' not in line:
+            contents = line.rstrip().split()
+            alct_rate = int(contents[-1]) / 10
+        elif '20CLCT' in line:
+            contents = line.rstrip().split()
+            clct_rate = int(contents[-1]) / 10
+        elif '32TMB' in line:
+            contents = line.rstrip().split()
+            tmb_rate = int(contents[-1]) / 10
+    #print(f'Extracted Rates: {alct_rate}, {clct_rate}, {tmb_rate}')
+    return alct_rate, clct_rate, tmb_rate
+
+def processTMBDumps(tmbbase,mdir,mfiles):
+    runs = []
+    rates = []
+    
+    for mfile in mfiles:
+        runs.append(mfile.split('.')[0])
+        
+        with open(f'{tmbbase}/{mdir}/{mfile}') as fl:
+            lines = fl.readlines() 
+            #print(findRates(lines))
+        
+        rates.append(findRates(lines))   
+        
+    return runs,rates
+
+'''
+def parse_directory(base_path):
+    """Traverse directory tree and extract rates from all text files."""
+    results = []
+
+    for root, _, files in os.walk(base_path):
+        for file in files:
+            if file.endswith('.txt'):
+                file_path = os.path.join(root, file)
+                with open(file_path, 'r') as f:
+                    lines = f.readlines()
+                rates = findRates(lines)
+                results.append({
+                    "file_path": file_path,
+                    "alct_rate": rates[0],
+                    "clct_rate": rates[1],
+                    "tmb_rate": rates[2]
+                })
+    
+    return results'''

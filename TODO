@@ -1,0 +1,11 @@
+
+Todo:
+  ✔ create new naming scheme for TMB dumps @done(24-11-20 14:09)
+  ☐ rename files to coincide with the naming scheme that you create @started(24-11-20 14:12)
+    currently the only file that has the proper naming structure is 
+    240826_HV3600 and I will structure the rest of the code around it
+    for the proof of concept 
+  ✔ github repo to save the files on @done(24-11-20 14:11)
+    ✔ give collin co-ownership @done(24-11-21 14:39)
+  ✔ recreate the mruns function to better serve the new naming scheme @started(24-11-20 14:11) @done(24-11-21 14:39) @lasted(1d28m8s)
+
