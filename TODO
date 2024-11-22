@@ -9,3 +9,6 @@ Todo:
     ✔ give collin co-ownership @done(24-11-21 14:39)
   ✔ recreate the mruns function to better serve the new naming scheme @started(24-11-20 14:11) @done(24-11-21 14:39) @lasted(1d28m8s)
 
+
+  Background events:
+  ☐ find a way to calculate the number of background events in our data to normalize the data.
