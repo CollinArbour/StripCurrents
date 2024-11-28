@@ -11,4 +11,7 @@ Todo:
 
 
   Background events:
-  ☐ find a way to calculate the number of background events in our data to normalize the data.
+    ☐ find a way to calculate the number of background events in our data to normalize the data.
+
+  daq:
+    ☐ 

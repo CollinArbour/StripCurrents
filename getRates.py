@@ -1,9 +1,12 @@
 import numpy as np
 import src.helpers as hp
 
+
+''' designed to output all alct, clct, and tmb rates into files based on the parent folder theyre taken from'''
+
 # defines the specific TMB dump you want to process
 tmbbasedir = './data/GasGain/TMBDumps'
-run_dir = '241121_HV3600'
+run_dir = '240826_HV3600'
 output_file = f'./plots/TMB_Rates/{run_dir}_RATES.txt'
 
 # removes extranious files that may not be tmb dumps and returns array of files sorted into data and dark
@@ -24,7 +27,7 @@ with open(output_file, 'w') as file:
     for i in range(len(mfd_runs)):
         if mfd_rates[1][i] is not None:
             file.write(
-                f'{i+1}\tRun: {mfd_rates[0][i]}\t ALCT Rate: {mfd_rates[1][i][0]}\t CLCT Rate: {mfd_rates[1][i][1]}\t TMB Rate: {mfd_rates[1][i][2]} Hz\n'
+                f'{i+1}\tRun: {mfd_rates[0][i]}\t ALCT Rate: {mfd_rates[1][i][0]} Hz\t CLCT Rate: {mfd_rates[1][i][1]} Hz\t TMB Rate: {mfd_rates[1][i][2]} Hz\n'
                 )
         else:
             file.write(f'{i+1}\tRun: {mfd_rates[0][i]}\t TMB Rate: None\n')
@@ -34,7 +37,7 @@ with open(output_file, 'w') as file:
     
     for i in range(len(mfb_runs)):
         if mfb_rates[1][i] is not None:
-            file.write(f'{i+1}\tRun: {mfb_rates[0][i]}\t ALCT Rate: {mfb_rates[1][i][0]}\t CLCT Rate: {mfb_rates[1][i][1]}\t TMB Rate: {mfb_rates[1][i][2]} Hz\n')
+            file.write(f'{i+1}\tRun: {mfb_rates[0][i]}\t ALCT Rate: {mfb_rates[1][i][0]} Hz\t CLCT Rate: {mfb_rates[1][i][1]} Hz\t TMB Rate: {mfb_rates[1][i][2]} Hz\n')
         else:
             file.write(f'{i+1}\tRun: {mfb_rates[0][i]}\t TMB Rate: None\n')
             print('ERROR: TMB Rate is None. Check src file.')

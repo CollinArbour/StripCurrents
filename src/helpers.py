@@ -312,6 +312,7 @@ def parse_log(log_file):
     
     return matches
 
+
 def timestamps(matches):
     ''' returnes a datatime array which contains timestamps in the format [datetime.datetime(year, month, day, hour, minute, second), datetime.datetime()...] '''
     timestamps = [datetime.fromisoformat(match[0]) for match in matches]
@@ -352,7 +353,7 @@ def current_vs_time(start_date, end_date, timestamps, imon_values):
     # Filter the data based on the provided date range
     df_filtered = df[start_date:end_date]
 
-    # Resample data to reduce noise (e.g., take mean every minute)
+    # Resample data to reduce noise (take mean every X minutes)
     df_resampled = df_filtered.resample('5min').mean()  # Resample per minute, adjust '1T' for different intervals (e.g., '5T' for 5 minutes)
 
     # Plot the resampled data
@@ -514,24 +515,3 @@ def processTMBDumps(tmbbase,mdir,mfiles):
         rates.append(findRates(lines))   
         
     return runs,rates
-
-'''
-def parse_directory(base_path):
-    """Traverse directory tree and extract rates from all text files."""
-    results = []
-
-    for root, _, files in os.walk(base_path):
-        for file in files:
-            if file.endswith('.txt'):
-                file_path = os.path.join(root, file)
-                with open(file_path, 'r') as f:
-                    lines = f.readlines()
-                rates = findRates(lines)
-                results.append({
-                    "file_path": file_path,
-                    "alct_rate": rates[0],
-                    "clct_rate": rates[1],
-                    "tmb_rate": rates[2]
-                })
-    
-    return results'''
