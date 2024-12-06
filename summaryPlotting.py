@@ -34,7 +34,7 @@ additional_ref = ['240820_refMeasures_S7']
 mruns = [ref_nms,plt_nms,pst_nms]
 mmarks = ['1','2','x']
 mcolors = ['blue','green','black']
-lims = (3400,3800)
+lims = (0,3800)
 '''
 important lims:
     low hv: (0,600)
@@ -123,11 +123,21 @@ for i,strip in enumerate(strip_numbers):
             find a way to use corrected_hvscan
             run matching for corrected hv and src_hvscan[1][smask]
             '''
-            plt.plot(hvscan[0], hvscan[1],linestyle='-', color=mcolors[j], label=f'Scan {j+1}')
-            plt.errorbar(hvscan[0],hvscan[1],yerr=hvscan[2],linestyle='',color=mcolors[j])
+            #plt.plot(hvscan[0], hvscan[1],linestyle='-', color=mcolors[j], label=f'Scan {j+1}')
+            #plt.errorbar(hvscan[0],hvscan[1],yerr=hvscan[2],linestyle='',color=mcolors[j])
+
+            #plt.errorbar(src_hvscan[0][smask],src_hvscan[1][smask],yerr=src_hvscan[2][smask],linestyle='',marker=mmarks[j],color=mcolors[j],label=f'Scan {j+1}')
+            #plt.errorbar(drk_hvscan[0][dmask],drk_hvscan[1][dmask],yerr=drk_hvscan[2][dmask],linestyle='',marker=mmarks[j],color=mcolors[j],label=f'Scan {j+1} Dark')
+            
+            plt.plot(src_hvscan[0][smask],src_hvscan[1][smask],linestyle='-',color=mcolors[j],label=f'Scan {j+1}')
+            plt.plot(drk_hvscan[0][dmask],drk_hvscan[1][dmask],linestyle='-',color=mcolors[j],label=f'Scan {j+1} Dark')
+            
+
+
             plt.yscale('log')
             plt.grid(linestyle='-', alpha=0.75, which='both')
             plt.xlim(left=0)
+            
         
     plt.title(f'Strip {strip} Current over HV Scan')
     plt.xlabel('HV (V)')

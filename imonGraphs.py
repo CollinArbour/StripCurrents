@@ -13,10 +13,10 @@ the first FULL day of data was taken on 2024-10-19
 
 # put in the dates which you need to have the data for 
 start_date = '2024-11-21'
-end_date = '2024-11-27'
+end_date = '2024-11-30'
 
 # enter the log file as saved in data
-file_date = '241121_241126'
+file_date = '241121_241129'
 log_file = f'./data/LogFiles/{file_date}_CAENGECO2020.log'
 
 #reads and cleans log data file using regex to only contain timestamps and imon values

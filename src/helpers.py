@@ -393,7 +393,7 @@ def accCharge_vs_time(start_date, end_date, timestamps, accumulated_charge):
 
     # Customize the plot
     plt.title(f"Accumulated Charge from ({start_date} to {end_date})")
-    plt.text(0.25, 0.94, f'Max Accumulated Charge Reached: {max_acc_charge:.2f}',
+    plt.text(0.20, 0.94, f'Max Accumulated Charge Reached: {max_acc_charge:.2f}',
          horizontalalignment='center',
          verticalalignment='center',
          transform=plt.gca().transAxes,

@@ -6,7 +6,7 @@ import src.helpers as hp
 
 # defines the specific TMB dump you want to process
 tmbbasedir = './data/GasGain/TMBDumps'
-run_dir = '240826_HV3600'
+run_dir = '241202_HV3400_HV3800'
 output_file = f'./plots/TMB_Rates/{run_dir}_RATES.txt'
 
 # removes extranious files that may not be tmb dumps and returns array of files sorted into data and dark
