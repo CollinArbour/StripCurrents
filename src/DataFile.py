@@ -22,8 +22,17 @@ class DataFile:
         print(to_return)
     
     def getDataRuns(self):
+        ''' Return the data runs '''
         return self.dataRuns
+    
+    def getFileSrc(self):
+        '''Grabs main source for file. Assumes that the 4th run has the main source of the run, so may or may not be a super reliable method for other uses than its current one.'''
+        return self.dataRuns[3].getSrc()
 
+    def getHole(self):
+        ''' Grabs hole used in measurement. Assumes that the 5th run has the correct hole, so may not be reliable in some runs. '''
+        return self.dataRuns[4].getHole()
+    
     def filterRuns(self,use):
         '''
         Filter runs in data file by cerain conditions
@@ -63,15 +72,13 @@ class DataFile:
 
         To Do:
             [ ] Take arguments that describe condition of sorting preferred
-            [ ] Throw an actual Exception if sort not supproted, don't just print
             [ ] Create a data member sort used
             [ ] Reduce coding redundancies (move sorting out of methods?)
         '''
         #Checks for valid sorting option
         Sorts = ['strip', 'hv']
         if sort not in Sorts:
-            print(f'Sort option "{sort}" not supported')
-            return -1
+            raise ValueError(f"\n\n\tType of Sorting Currently Not Supported.\n\tSorting Type Entered: {sort}\n\tPlease Switch to 'strip' or 'hv'")
 
         wSrc = []
         woSrc = []
@@ -114,19 +121,31 @@ class DataFile:
                 woSrc_idxs = np.argsort(woSrc_hvs)
                 self.darkRuns = np.array(woSrc)[woSrc_idxs]
 
-    def describe(self):
-        print(self.name)
-        print('\tWith Source:')
-        for run in self.srcRuns:
-            print(f'\t\tRun: {run.getName()}')
-            print(f'\t\t\tHV: {run.getHV()} V \t Strip: {run.getStrip()}')
-            print(f'\t\t\tSrc: {run.getSrc()} \t Hole: {run.getHole()}')
-        print('\tWith Out Source:')
-        for run in self.darkRuns:
-            print(f'\t\tRun: {run.getName()}')
-            print(f'\t\t\tHV: {run.getHV()} V \t Strip: {run.getStrip()}')
-            print(f'\t\t\tSrc: {run.getSrc()} \t Hole: {run.getHole()}')
+    def describe(self, run = None):
+        '''
+            This method taks a dataFile object and describes its individual runs(print important information about the run to the terminal).
+            It is currently setup to either describe all dataRuns in a dataFile, or a specified run passed into the run parameter
 
+            Arguments:
+                -run: optional parameter of one dataRun object, to be described by itself. If all dataRuns should be described, dont use this parameter.
+
+            Notes:
+                -this method was modified with the run parameter to be usable for inspecting the "MORE SIGNAL THAN ERROR" issue.
+        '''
+        #Create list of dataRuns to loop over, and determine whether to describe a specific run, or all of them.
+        runs_to_loop = []
+        runs_to_loop = [run] if run is not None else self.dataRuns
+        
+        #print the data file that is being described
+        print(f'\tWithin {self.name}:')
+
+        #loop through the dataRun(s) to print the data
+        for individual_run in runs_to_loop:
+            print(f'\t\tRun: {individual_run.getName()}')
+            print(f'\t\t\tHV: {individual_run.getHV()} V \t Strip: {individual_run.getStrip()}')
+            print(f'\t\t\tSrc: {individual_run.getSrc()} \t Hole: {individual_run.getHole()}')
+            print(f'\t\t\tAvg Current: {individual_run.getAvgCur()}')
+        
     def getHVScan(self,src=True):
         '''
         Returns 3 numpy arrays of hvs, avg current, and standard error
