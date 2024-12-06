@@ -22,7 +22,7 @@ class DataFile:
         print(to_return)
     
     def getDataRuns(self):
-
+        ''' Return the data runs '''
         return self.dataRuns
     
     def getFileSrc(self):
@@ -30,6 +30,7 @@ class DataFile:
         return self.dataRuns[3].getSrc()
 
     def getHole(self):
+        ''' Grabs hole used in measurement. Assumes that the 5th run has the correct hole, so may not be reliable in some runs. '''
         return self.dataRuns[4].getHole()
     
     def filterRuns(self,use):
@@ -123,7 +124,7 @@ class DataFile:
     def describe(self, run = None):
         '''
             This method taks a dataFile object and describes its individual runs(print important information about the run to the terminal).
-            It is currently setup to either describe all dataRuns, or a specified run
+            It is currently setup to either describe all dataRuns in a dataFile, or a specified run passed into the run parameter
 
             Arguments:
                 -run: optional parameter of one dataRun object, to be described by itself. If all dataRuns should be described, dont use this parameter.
