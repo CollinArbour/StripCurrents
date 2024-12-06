@@ -42,7 +42,8 @@ for i  in range(3):
     p1, cov = curve_fit(hp.mGaussianSum,np.array(x_pos),strips[1],p0)
 
     # Make plot showing 2D distribution
-    hp.mkHeatMap_GaussSum(40,p1,mlabel=f'Src {i+1}',save=True)
+    #hp.mkHeatMap_GaussSum(40,p1,mlabel=f'Src {i+1}',save=True)
 
     # Make plot displaying Strip scan shape and fit
-    #hp.mkScans(strips,p1,i,save=True)
+    #hp.mkScans(strips,mps,i,save=False,markers=False)
+    #hp.mkScans(strips,p1,i,save=False,markers=True)
