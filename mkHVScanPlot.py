@@ -79,7 +79,8 @@ for run_nm in run_nms:
 
     #Generate Gas Gain
     #hp.mkGasGain(mhvscan, strip, hole, start_volt=3500)
-    
+
+    #Gather data for gas gain table making
     table_data[0].append(mhvscan)
     table_data[1].append(hole)
     table_data[2].append(strip)
@@ -92,5 +93,5 @@ for run_nm in run_nms:
     #create space charge plot
     #hp.mkSpaceChargePlot(mhvscan, strip, start_volt=3400, end_volt=3600)
 
-
+#make gas gain table
 hp.mkGasGainTable(table_data[0], table_data[1], table_data[2])
