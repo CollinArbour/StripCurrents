@@ -77,6 +77,7 @@ for i,strip in enumerate(strip_numbers):
 
         plt.errorbar(src_hvscan[0][smask],src_hvscan[1][smask],yerr=src_hvscan[2][smask],linestyle='',marker=mmarks[j],color=mcolors[j],label=f'Scan {j+1}')
         plt.errorbar(drk_hvscan[0][dmask],drk_hvscan[1][dmask],yerr=drk_hvscan[2][dmask],linestyle='',marker=mmarks[j],color=mcolors[j],label=f'Scan {j+1} Dark')
+        print(drk_hvscan[2][dmask])
 
     plt.title(f'Strip {strip} Current over HV Scan')
     plt.xlabel('HV (V)')
@@ -85,6 +86,6 @@ for i,strip in enumerate(strip_numbers):
 
     plt.legend()
 
-    plt.savefig(f'./plots/HV_Scans/all/S{strip}_hvScan_lowHV_log.png',format='png',dpi=400)
+    #plt.savefig(f'./plots/HV_Scans/all/S{strip}_hvScan_lowHV_log.png',format='png',dpi=400)
     #plt.savefig(f'./plots/HV_Scans/all/S{strip}_hvScan_highHV_log.png',format='png',dpi=400)
     plt.close()

@@ -146,7 +146,7 @@ def accumChargeImon(Imon,t):
     return Imc/lcm * t
     
 
-def mkScans(strips,ps,i,save=False):
+def mkScans(strips,ps,ax,mlabel):
     '''
     @arg:strips - [xpos,values,stderrs]
     @arg:ps - []
@@ -154,23 +154,17 @@ def mkScans(strips,ps,i,save=False):
     # Producing line shape of fit
     xfit = np.linspace(0,200,1000)
     yfit = mGaussianSum(xfit,ps[0],ps[1],ps[2],ps[3],ps[4],ps[5])
-    fwhm = FWHM(xfit,yfit)
-    fwhmCharge = intFWHM(ps,fwhm)
     
-    plt.errorbar(strips[0],strips[1],yerr=strips[2],linestyle='',marker='.')
-    plt.plot(xfit,yfit) # ,label=nms[i]) <--- NEED TO ADAPT FUNCTION TO TAKE IN LABELS
+    ax.errorbar(strips[0],strips[1],yerr=strips[2],linestyle='',marker='.')
+    ax.plot(xfit,yfit,label=mlabel) # ,label=nms[i]) <--- NEED TO ADAPT FUNCTION TO TAKE IN LABELS
     
-    plt.xlabel('Distance (mm)')
-    plt.ylabel('Linear Current Density (nA/mm)')
+    ax.set_xlabel('Strip Position (mm)')
+    ax.set_ylabel('Linear Current Density (nA/mm)')
     #plt.ylabel('Avg. Current (nA)')
-    plt.title(f'MiniCSC4: Strip Scan L1 90Sr-Src{i+1} H2 HV3600')
-    plt.legend()
+    #plt.title(f'MiniCSC4: Strip Scan L1 90Sr-Src{i+1} H2 HV3600')
+    #plt.legend()
     
-    if save:
-        plt.savefig(f'./plots/SrSrcs/avgI_src{i}.png',format='png',dpi=400)
-        plt.close()
-    else:
-        plt.show()
+    return ax
 
 
 def mkHeatMap_GaussSum(r,ps,pts=1000,mlabel='',save=False):
