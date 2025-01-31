@@ -9,6 +9,13 @@ FlowRate_0.5
 GasComp:0.4_Ar:0.55_CO2:0.05_CF4_recup
 Comments:
 ```
+
+## Plot title format:
+```
+MiniCSC4 {Measurement type} L1 H2 90Sr-Src{i+1} HV3600
+        strip scan vs hvSCAN 
+```
+
 Drew 
 
 justin
