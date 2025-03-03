@@ -1,0 +1,79 @@
+[
+    {
+        "Date": "2024_08_27",
+        "Pressure":966.78,
+        "AccumulatedCharge": 0.0,
+        "Type":"DAQ_Measurements",
+        "Gas":"Fresh CF4",
+        "Runs":{
+            "Dark":{
+                "3600":{
+                    "raw":["./DAQ_Measurements/02_dyn_freshCF4/data/dark/csc_00000001_EmuRUI01_STEP_27s_000_240826_101853_UTC.raw",
+                        "./DAQ_Measurements/02_dyn_freshCF4/data/dark/csc_00000001_EmuRUI01_STEP_27s_000_240826_102021_UTC.raw",
+                        "./DAQ_Measurements/02_dyn_freshCF4/data/dark/csc_00000001_EmuRUI01_STEP_27s_000_240826_102227_UTC.raw",
+                        "./DAQ_Measurements/02_dyn_freshCF4/data/dark/csc_00000001_EmuRUI01_STEP_27s_000_240826_102500_UTC.raw",
+                        "./DAQ_Measurements/02_dyn_freshCF4/data/dark/csc_00000001_EmuRUI01_STEP_27s_000_240826_102627_UTC.raw",
+                        "./DAQ_Measurements/02_dyn_freshCF4/data/dark/csc_00000001_EmuRUI01_STEP_27s_000_240826_102817_UTC.raw"
+                    ],
+                    "proccessed":[]
+                }
+            },
+            "109Cd":{
+                "3600":{
+                    "hole02":{
+                        "raw":["./DAQ_Measurements/02_dyn_freshCF4/data/wSrc/hole2/csc_00000001_EmuRUI01_STEP_27s_000_240826_092712_UTC.raw",
+                            "./DAQ_Measurements/02_dyn_freshCF4/data/wSrc/hole2/csc_00000001_EmuRUI01_STEP_27s_000_240826_093354_UTC.raw",
+                            "./DAQ_Measurements/02_dyn_freshCF4/data/wSrc/hole2/csc_00000001_EmuRUI01_STEP_27s_000_240826_093651_UTC.raw",
+                            "./DAQ_Measurements/02_dyn_freshCF4/data/wSrc/hole2/csc_00000001_EmuRUI01_STEP_27s_000_240826_093940_UTC.raw"
+                        ],
+                        "proccessed":[]
+                    },
+                    "hole04":{
+                        "raw":[],
+                        "proccessed":[]
+                    },
+                    "hole06":{
+                        "raw":[],
+                        "proccessed":[]
+                    }
+                }
+            }
+        },
+        "Comments":"No dark rates reached full number of events"
+    },
+    {
+        "Date":"2024_10_25",
+        "Pressure":962.121",
+        "AccumulatedCharge":11.68
+    },
+    {
+        "Date":"2024_10_31",
+        "Pressure":970.552,
+        "AccumulatedCharge":11.68
+    },
+    {
+        "Date":"2024_11_21",
+        "Pressure":944.8,
+        "AccumulatedCharge":31.13
+    },
+    {
+        "Date":"2024_11_22",
+        "Pressure":0,
+        "AccumulatedCharge":31.13
+    },
+    {
+        "Date":"2024_11_29",
+        "Pressure":955.485,
+        "AccumulatedCharge":48.38
+    },
+    {
+        "Date": "2025_01_21",
+        "Pressure:0,
+        "AccumulatedCharge":61.68
+    },
+    {
+        "Date": "2025_02_06",
+        "Pressure:0,
+        "AccumulatedCharge":98.02
+    }
+]
