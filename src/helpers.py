@@ -4,7 +4,7 @@ from telnetlib import XAUTH
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
-from pyparsing import deque
+#from pyparsing import deque
 import scipy.integrate as integrate
 from scipy.optimize import curve_fit
 import src.DataFile as df
@@ -210,11 +210,30 @@ def accumChargeImon(Imon,t):
     #lcm = lwire/10 #mm -> cm
 
     return Imc/lcm * t
+
+def mkRawScans(strips,ax,mlabel=''):
+    '''
+    args:strips - [xpos,values,stderrs] **values is nA/mm (across with width of the strip)
+    args:ax     -  plt axis object to plot on
+    '''
+
+    if mlabel:
+        ax.errorbar(strips[0],strips[1],yerr=strips[2],linestyle='',marker='.',label=mlabel)
+    else:
+        ax.errorbar(strips[0],strips[1],yerr=strips[2],linestyle='',marker='.')
     
+    ax.set_xlabel('Strip Position (mm)')
+    ax.set_ylabel('Strip Current (nA)')
+
+    return ax
+
+
 def mkScans(strips,ps,ax,mlabel):
     '''
     arg:strips - [xpos,values,stderrs] **values is nA/mm (across with width of the stri)
-    arg:ps - curve fit
+    arg:ps     - curve fit
+    args:ax     -  plt axis object to plot on
+    args:mlabel - label for plot
     '''
     sig1 = ps[1]
     mu1 = ps[2]
@@ -238,7 +257,7 @@ def mkScans(strips,ps,ax,mlabel):
     
     return ax
 
-def mkHeatMap_GaussSum(r,ps,pts=1000,mlabel='',save=False):
+def mkHeatMap_GaussSum(r,ps,pts=1000,mlabel='',logScale=False,txtBox=True,save=False):
     '''
     Makes heat map showing 2D distribution of current from source
 
@@ -275,37 +294,61 @@ def mkHeatMap_GaussSum(r,ps,pts=1000,mlabel='',save=False):
     
     hm = np.max(G) / 2
 
-    sig0_lvl = 5        
-    sig0_lvl_xval = sig0 * sig0_lvl     #5sigma
-    sig0_lvl_yval = mGaussianSum(sig0_lvl_xval,a0,sig0,0,a1,sig1,0)     #Create and sum 2 Gaussians 
+    sig_lvls = [3,2]
+    sig_lvls_xvals = []
+    sig_lvls_yvals = []
+    sig_lvls_lbls = {}
 
-    contour = plt.contour(hmxpts, hmypts, G, levels=[sig0_lvl_yval,hm], colors='white', linestyles='dashed', linewidths=2)
-    plt.clabel(contour, inline=True, fontsize=8, fmt={sig0_lvl_yval: f'{sig0_lvl}σ_0',hm: 'FWHM'})
+    for lvl in sig_lvls:
+        xval = sig0 * lvl
+        yval = mGaussianSum(xval,a0,sig0,0,a1,sig1,0)
+        sig_lvls_xvals.append(xval)
+        sig_lvls_yvals.append(yval)
+        sig_lvls_lbls[yval] = f'{lvl}σ'
 
-    sig0_lvl_totChrg = intRadius([a0,sig0,0,a1,sig1,0],sig0_lvl_xval)   #5sigma
-    sig0_lvl3_totChrg = intRadius([a0,sig0,0,a1,sig1,0],sig0*3)         #3sigma
-    sig0_lvl10_totChrg = intRadius([a0,sig0,0,a1,sig1,0],sig0*10)       #10sigma
-    
+    sig_lvls_yvals.append(hm)
+    sig_lvls_lbls[hm] = 'FWHM'
+
+    contour = plt.contour(hmxpts, hmypts, G, levels=sig_lvls_yvals, colors='white', linestyles='dashed', linewidths=2)
+    plt.clabel(contour, inline=True, fontsize=8, fmt=sig_lvls_lbls)
+
+    totChrg_vals = [intRadius([a0,sig0,0,a1,sig1,0],xval) for xval in sig_lvls_xvals]
+
     if np.max(G) > 1.5:
         print('ERROR: Max is greater than upper limit in Heat Map')
 
-    plt.imshow(G,origin='lower', cmap='viridis',extent=[-r,r,-r,r],vmin=0,vmax=1.5)
+    if logScale:
+        # Log Scale
+        plt.imshow(G,origin='lower', cmap='viridis',extent=[-r,r,-r,r],norm=colors.LogNorm(vmin=1e-3, vmax=np.max(G)))
+    else:
+        # Linear Scale
+         plt.imshow(G,origin='lower', cmap='viridis',extent=[-r,r,-r,r],vmin=0,vmax=1.5)
     
     plt.xlabel('X Position (mm)')
     plt.ylabel('Y Position (mm)')
-    plt.title(f'Sum of 2D-Gaussians Fit {mlabel}')
+    msrc = int(mlabel.split()[-1])
+    if msrc == 1:
+        plt.title('Irradiation spot from 25 MBq $^{90}$Sr source')
+    elif msrc == 3:
+        plt.title('Irradiation spot from 50 MBq $^{90}$Sr source')
 
-    xtxtpos = -41
-    ytxtpos = -41
-    plt.text(xtxtpos,ytxtpos,f'σ0: {sig0:0.2f}mm  σ1: {sig1:.2f}mm  FWHM: \nItot in 3*σ0= {sig0_lvl3_totChrg:.2f} nA\nItot in 5*σ0= {sig0_lvl_totChrg:.2f} nA\nItot in 10*σ0= {sig0_lvl10_totChrg:.2f} nA',bbox=dict(facecolor='grey',alpha=1))
-    #plt.text(xtxtpos,ytxtpos,f'r=5σ_0={sig:.2f} mm \nItot: {chrg_sig:.2f} nA',bbox=dict(facecolor='grey',alpha=0.75))
+    xtxtpos = -35
+    ytxtpos = 35
+    if txtBox:
+        print('Reimliment this!')
+        plt.text(xtxtpos,ytxtpos,f'σ: {sig0:0.2f}mm',bbox=dict(facecolor='grey',alpha=1))
+        # plt.text(xtxtpos,ytxtpos,f'σ0: {sig0:0.2f}mm  σ1: {sig1:.2f}mm  FWHM: \nItot in 3*σ0= {sig0_lvl3_totChrg:.2f} nA\nItot in 5*σ0= {sig0_lvl_totChrg:.2f} nA\nItot in 10*σ0= {sig0_lvl10_totChrg:.2f} nA',bbox=dict(facecolor='grey',alpha=1))
+        #plt.text(xtxtpos,ytxtpos,f'r=5σ_0={sig:.2f} mm \nItot: {chrg_sig:.2f} nA',bbox=dict(facecolor='grey',alpha=0.75))
     
-    cbar = plt.colorbar()  # Create a colorbar
-    cbar.set_label('Current Density (nA/mm^2)', rotation=270, labelpad=15)
+    cbar = plt.colorbar(pad=0.02)  # Create a colorbar
+    cbar.set_label(r'Current Density (nA$\cdot$mm$^{-2}$)', rotation=270, labelpad=15)
     
     if mlabel and save:
         mlabel = '_'.join(mlabel.split())
-        plt.savefig(f'./plots/SrSrcs/{mlabel}_HeatMap.png',format='png',dpi=400)
+        flnm = f'./plots/SrSrcs/{mlabel}_HeatMap.png'
+        if logScale:
+            flnm = f'./plots/SrSrcs/{mlabel}_HeatMap_log.png'
+        plt.savefig(flnm,format='png',dpi=400)
         plt.close()
     else:
         plt.show()
@@ -658,12 +701,15 @@ def imon_values(matches):
     
     return imon_values
 
-def accCharge_calc(timestamps, imon_values):
+def accCharge_calc(timestamps, imon_values, src='src1'):
     ''' calculates accumulated chrage based on timestamps and imon values given from log file '''
 
     accCharge = [0]
 
-    frac = (350.05*2)/1200
+    if src == 'src1':
+        frac = (350.05*2)/1200          # (I_enc * 2) / I_mon_ref for src1
+    elif src == 'src3':
+        frac = (572.54*2) / 2115        # (I_enc * 2) / I_mon_ref for src3
 
     #needed to calulate the difference in seconds between log reports
     seconds = [
@@ -672,6 +718,7 @@ def accCharge_calc(timestamps, imon_values):
     ]
 
     for i in range(len(seconds)):
+        # I_mon (microA) / 1000 = I_mon (mA) which you use to report Accumulated Charge value
         temp_accCharge = (imon_values[i] * frac / 1000) / 26.22 * seconds[i] 
         accCharge.append(accCharge[-1] + temp_accCharge)
 
