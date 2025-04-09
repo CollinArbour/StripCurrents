@@ -319,7 +319,8 @@ def mkHeatMap_GaussSum(r,ps,pts=1000,mlabel='',logScale=False,txtBox=True,save=F
 
     if logScale:
         # Log Scale
-        plt.imshow(G,origin='lower', cmap='viridis',extent=[-r,r,-r,r],norm=colors.LogNorm(vmin=1e-3, vmax=np.max(G)))
+        plt.imshow(G,origin='lower', cmap='viridis',extent=[-r,r,-r,r],norm=colors.PowerNorm(gamma=0.6,vmin=0, vmax=1.5))
+        # plt.imshow(G,origin='lower', cmap='viridis',extent=[-r,r,-r,r],norm=colors.LogNorm(vmin=1e-3, vmax=np.max(G)))
     else:
         # Linear Scale
          plt.imshow(G,origin='lower', cmap='viridis',extent=[-r,r,-r,r],vmin=0,vmax=1.5)
