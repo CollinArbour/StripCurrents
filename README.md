@@ -16,6 +16,8 @@ MiniCSC4 {Measurement type} L1 H2 90Sr-Src{i+1} HV3600
         strip scan vs hvSCAN 
 ```
 
-Drew 
-
-justin
+## To do items:
++ [ ] Split up `helpers.py`
++ [ ] Create data run object for GasGain DAQ  Measurements
+  + [ ] Functions for and storing fit data
+  + [ ] Save (read and write to text) so it can pick back up
