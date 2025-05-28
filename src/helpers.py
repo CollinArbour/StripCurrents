@@ -1,9 +1,12 @@
+from cProfile import label
 from os import error
-from re import M
+from re import M, X
 from telnetlib import XAUTH
+from tkinter import font
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
+import matplotlib.ticker as mticker
 #from pyparsing import deque
 import scipy.integrate as integrate
 from scipy.optimize import curve_fit
@@ -14,6 +17,66 @@ import re
 from datetime import datetime
 from scipy.interpolate import interp1d
 
+def add_cms_label(fig, ax=None,
+                  cms_text='CMS', status_text='Preliminary',context=None,
+                  cms_fontsize=14, status_fontsize=12,context_fontsize=14,
+                  y=-1, x_offset=0.01, gap=0.09,
+                  top_adjust=0.92):
+    """
+    Adds a CMS-style label aligned with the plot area (not figure edge).
+
+    Parameters:
+        fig             : Matplotlib figure object
+        ax              : Optional Axes object; if None, uses plt.gca()
+        cms_text        : Bold text (e.g., 'CMS MUON')
+        status_text     : Italic text (e.g., 'Preliminary')
+        cms_fontsize    : Font size for CMS text
+        status_fontsize : Font size for status
+        y               : Vertical position in figure coordinates
+        x_offset        : Offset *into* the axes region (as fraction of axes width)
+        gap             : Horizontal space between CMS and status text
+        top_adjust      : Adjusts figure top margin to make room
+    """
+    if ax is None:
+        ax = plt.gca()
+
+    if y < 0:
+        y = top_adjust+0.01  # Default to just below the top of the figure
+
+    # Get bounding box of the Axes in figure coordinates
+    ax_pos = ax.get_position()
+    x_fig = ax_pos.x0 + x_offset * (ax_pos.x1 - ax_pos.x0)
+
+    # Place the CMS and status labels
+    fig.text(x_fig, y, cms_text,
+             fontsize=cms_fontsize, fontweight='bold',
+             ha='left', va='bottom')
+
+    fig.text(x_fig + gap, y, status_text,
+             fontsize=status_fontsize, style='italic',
+             ha='left', va='bottom')
+    
+    if context:
+        x2_fig = ax_pos.x1 - 0.001 * (ax_pos.x1 - ax_pos.x0)
+        # x2_fig = ax_pos.x1 - x_offset * (ax_pos.x1 - ax_pos.x0)
+        # fig.text(ax_pos.x1, y, context, ha='right', va='bottom', fontsize=context_fontsize)
+        fig.text(x2_fig, y, context, ha='right', va='bottom', fontsize=context_fontsize)
+
+    fig.subplots_adjust(top=top_adjust)
+
+def sci_notation_formatter(x, _):
+    if x == 0:
+        return "$0$"
+    exponent = int(np.floor(np.log10(abs(x))))
+    coeff = x / 10**exponent
+    return fr"${coeff:.1f} \times 10^{{{exponent}}}$"
+
+
+# def add_cms_label(ax):
+#     ax.text(0.02, 0.97, 'CMS MUON', transform=ax.transAxes,
+#             fontsize=16, fontweight='bold', va='top')
+#     ax.text(0.02, 0.91, 'preliminary', transform=ax.transAxes,
+#             fontsize=12, style='italic', va='top')
 
 
 ## Functions
@@ -228,7 +291,7 @@ def mkRawScans(strips,ax,mlabel=''):
     return ax
 
 
-def mkScans(strips,ps,ax,mlabel):
+def mkScans(strips,ps,ax,mlabel,xsec=False):
     '''
     arg:strips - [xpos,values,stderrs] **values is nA/mm (across with width of the stri)
     arg:ps     - curve fit
@@ -244,16 +307,38 @@ def mkScans(strips,ps,ax,mlabel):
     # Producing line shape of fit
     xfit = np.linspace(0,200,1000)
     yfit = mGaussianSum(xfit,ps[0],sig1,mu1,ps[3],sig2,mu2)
+    y0 = Gauss(xfit,ps[0],sig1,mu1)
+    y1 = Gauss(xfit,ps[3],sig2,mu2)
+    fwhm = FWHM(xfit,yfit)
 
-    ax.errorbar(strips[0],strips[1],yerr=strips[2],linestyle='',marker='.')
-    ax.plot(xfit,yfit,label=mlabel) # ,label=nms[i]) <--- NEED TO ADAPT FUNCTION TO TAKE IN LABELS
+    # ax.plot(xfit,yfit,color='black') # ,label=nms[i]) <--- NEED TO ADAPT FUNCTION TO TAKE IN LABELS
     
-    #ax.fill_between(xfit, yfit, where=((xfit >= fwhm[0]) & (xfit <= fwhm[1])), color='red', alpha=0.4, label='FWHM range')
-    ax.fill_between(xfit, yfit, where=((xfit >= mu1 - 2*sig1) & (xfit <= mu1 + 2*sig1)), color='red', alpha=0.3, label='2σ range')
-    ax.fill_between(xfit, yfit, where=((xfit >= mu1 - 3*sig1) & (xfit <= mu1 + 3*sig1)), color='red', alpha=0.2, label='3σ range')
+    lbl_fsize = 18
+    ax.set_xlim((0,160))
 
-    ax.set_xlabel('Strip Position (mm)')
-    ax.set_ylabel('Linear Current Density (nA/mm)')
+    if xsec:
+        ax.plot(xfit,yfit,color='black',label='Fit cross section') # ,label=nms[i]) <--- NEED TO ADAPT FUNCTION TO TAKE IN LABELS
+        ax.plot(xfit,y0,linestyle='--',color='blue',alpha=1,label='Primary Gaussian')
+        ax.plot(xfit,y1,linestyle='--',color='orange',alpha=1,label='Shoulder Gaussian')
+        ax.fill_between(xfit, yfit, where=((xfit >= fwhm[0]) & (xfit <= fwhm[1])), color='red', alpha=0.4, label='FWHM range')
+        ax.fill_between(xfit, yfit, where=((xfit >= mu1 - 2*sig1) & (xfit <= mu1 + 2*sig1)), color='red', alpha=0.3, label='2σ range')
+        ax.fill_between(xfit, yfit, where=((xfit >= mu1 - 3*sig1) & (xfit <= mu1 + 3*sig1)), color='red', alpha=0.2, label='3σ range')
+        ax.set_ylim((0,yfit.max()+0.1))
+        ax.set_xlabel('X Position [mm]',fontsize=lbl_fsize, ha='right', x=1.0)
+    else:
+        ax.plot(xfit,yfit,color='black',label='Fit') 
+        ax.plot(xfit,y0,linestyle='--',color='blue',alpha=1,label='Primary Gaussian')
+        ax.plot(xfit,y1,linestyle='--',color='orange',alpha=1,label='Shoulder Gaussian')
+        # ax.plot(xfit,yfit,color='tab:blue',label='Fit') 
+        # ax.plot(xfit,y0,linestyle='--',color='tab:green',alpha=1,label='Primary Gaussian')
+        # ax.plot(xfit,y1,linestyle='--',color='tab:olive',alpha=1,label='Shoulder Gaussian')
+        ax.errorbar(strips[0],strips[1],yerr=strips[2],linestyle='',marker='.',markersize=8,color='black',label='Data')
+        ax.set_ylim((0,yfit.max()+1))
+        ax.set_xlabel('Strip Position [mm]',fontsize=lbl_fsize, ha='right',x=1.0)
+
+    # ax.set_ylabel(r'Current Density (nA$\cdot$mm$^{-2}$)',fontsize=lbl_fsize)
+    ax.set_ylabel(r'Linear Current Density [nA$\cdot$mm$^{-1}$]',fontsize=lbl_fsize, ha='right',y=1.0)
+
     
     return ax
 
@@ -310,7 +395,7 @@ def mkHeatMap_GaussSum(r,ps,pts=1000,mlabel='',logScale=False,txtBox=True,save=F
     sig_lvls_lbls[hm] = 'FWHM'
 
     contour = plt.contour(hmxpts, hmypts, G, levels=sig_lvls_yvals, colors='white', linestyles='dashed', linewidths=2)
-    plt.clabel(contour, inline=True, fontsize=8, fmt=sig_lvls_lbls)
+    plt.clabel(contour, inline=True, fontsize=12, fmt=sig_lvls_lbls)
 
     totChrg_vals = [intRadius([a0,sig0,0,a1,sig1,0],xval) for xval in sig_lvls_xvals]
 
@@ -325,28 +410,44 @@ def mkHeatMap_GaussSum(r,ps,pts=1000,mlabel='',logScale=False,txtBox=True,save=F
         # Linear Scale
          plt.imshow(G,origin='lower', cmap='viridis',extent=[-r,r,-r,r],vmin=0,vmax=1.5)
     
-    plt.xlabel('X Position (mm)')
-    plt.ylabel('Y Position (mm)')
+    lbl_fsize = 18
+    plt.xlabel('X Position [mm]',fontsize=lbl_fsize, ha='right', x=1.0)
+    plt.ylabel('Y Position [mm]',fontsize=lbl_fsize, ha='right', y=1.0)
     msrc = int(mlabel.split()[-1])
-    if msrc == 1:
-        plt.title('Irradiation spot from 25 MBq $^{90}$Sr source')
-    elif msrc == 3:
-        plt.title('Irradiation spot from 50 MBq $^{90}$Sr source')
 
+    plt.axhline(0, color='lightgrey',linestyle=':', alpha=0.5)
+
+    # title_fsize = 20
+    # if msrc == 1:
+    #     plt.title('$^{90}$Sr (25 MBq) Irrad. Spot',fontsize=title_fsize)
+    # elif msrc == 3:
+    #     plt.title('$^{90}$Sr (50 MBq) Irrad. Spot',fontsize=title_fsize)
+    #     # plt.title('Irradiation spot from 50 MBq $^{90}$Sr source',fontsize=title_fsize)
+
+    if mlabel[-1] == '1':
+        src = '$^{90}$Sr (30 MBq)'
+    elif mlabel[-1] == '3':
+        src = '$^{90}$Sr (50 MBq)'
     xtxtpos = -35
-    ytxtpos = 35
+
+    ytxtpos = 30
     if txtBox:
-        print('Reimliment this!')
-        plt.text(xtxtpos,ytxtpos,f'σ: {sig0:0.2f}mm',bbox=dict(facecolor='grey',alpha=1))
+        print('Reimpliment this!')
+        plt.text(xtxtpos,ytxtpos,f'{src}\n  σ: {sig0:0.2f} mm',fontsize=12,bbox=dict(facecolor='grey',alpha=1))
         # plt.text(xtxtpos,ytxtpos,f'σ0: {sig0:0.2f}mm  σ1: {sig1:.2f}mm  FWHM: \nItot in 3*σ0= {sig0_lvl3_totChrg:.2f} nA\nItot in 5*σ0= {sig0_lvl_totChrg:.2f} nA\nItot in 10*σ0= {sig0_lvl10_totChrg:.2f} nA',bbox=dict(facecolor='grey',alpha=1))
         #plt.text(xtxtpos,ytxtpos,f'r=5σ_0={sig:.2f} mm \nItot: {chrg_sig:.2f} nA',bbox=dict(facecolor='grey',alpha=0.75))
     
-    cbar = plt.colorbar(pad=0.02)  # Create a colorbar
-    cbar.set_label(r'Current Density (nA$\cdot$mm$^{-2}$)', rotation=270, labelpad=15)
+    cbar = plt.colorbar(pad=0.0)  # Create a colorbar
+    cbar.set_label(r'Current Density [nA$\cdot$mm$^{-2}$]', rotation=90, labelpad=20,fontsize=lbl_fsize, ha='right', y=1.0)
+    
+    cntxt = '904 Lab'
+    # add_cms_label(plt.gcf(),ax=plt.gca(),context=cntxt)
+    add_cms_label(plt.gcf(),ax=plt.gca(),cms_fontsize=lbl_fsize,status_fontsize=lbl_fsize,context_fontsize=lbl_fsize,context=cntxt)
+    # ax.text(0.96,0.96,src,transform=ax.transAxes,fontsize=12,ha='right',va='top')
     
     if mlabel and save:
         mlabel = '_'.join(mlabel.split())
-        flnm = f'./plots/SrSrcs/{mlabel}_HeatMap.png'
+        flnm = f'./plots/SrSrcs/{mlabel}_HeatMap_wXSec.png'
         if logScale:
             flnm = f'./plots/SrSrcs/{mlabel}_HeatMap_log.png'
         plt.savefig(flnm,format='png',dpi=400)
@@ -354,7 +455,100 @@ def mkHeatMap_GaussSum(r,ps,pts=1000,mlabel='',logScale=False,txtBox=True,save=F
     else:
         plt.show()
 
-def mkGasGain(mscan_list, strip, hole, start_volt=3000, end_volt=3600, start_plateau=0, end_plateau=500, x_lower_lim=None, x_upper_lim=None, y_lower_lim=None, y_upper_lim=None):    
+def mkGasGainComprehensive(src,drk,mscan_list, strip, hole,tag, start_volt=3300, end_volt=3500, start_plateau=1, end_plateau=500, x_lower_lim=None, x_upper_lim=None, y_lower_lim=None, y_upper_lim=None):    
+    '''
+        Create figure showing GasGain. Code largely taken from mkRawFittedPlot.
+
+        Arguments:
+            -mscan_list: list of HV, avg Current Vals, and stderr
+            -strip: strip number for labeling
+            -start_volt: starting voltage for  exponential fit
+            -end_volt: ending voltage for exponential fit
+            -start_plateau: starting point for plateau value calculation, which is used to calculate gas gain
+            -end_plateau: ending point for plateau calculation
+            -x_lower_lim: lower limit for graph zoom on x axis
+            -x_upper_lim: upper limit for graph zoom on x axis
+            -y_lower_lim: lower limit for graph zoom on y axis
+            -y_upper_lim: upper limit for graph zoom on y axis
+
+    '''
+    
+    #start exponential fit
+    print('\n\tPerforming fit')
+    mask_fit = (mscan_list[0] >= start_volt) & (mscan_list[0] <= end_volt)
+
+    #Find mean of plateau
+    plateau_mean,plateau_uncert = getPlateauMean(mscan_list, start_plateau, end_plateau)
+    
+    # Gas gain value
+    # Gas gain = avg current / plateau mean
+    gas_gain_list = mscan_list[1] / plateau_mean
+    
+    #get curve fit
+    p0 = [0.001,0.01]
+    p1,cov = curve_fit(mExp, mscan_list[0][mask_fit], gas_gain_list[mask_fit], p0)
+
+    #x and y vals for exp plotting
+    xs = np.linspace(0,3850,2000)
+    ys = mExp(xs,p1[0],p1[1])
+
+    # Create raw figure
+    print('\tCreating raw figure')
+    plt.errorbar(src[0],src[1],src[2], marker='.',linestyle='',color='black',label='Source Current')
+    plt.errorbar(drk[0],drk[1],drk[2], marker='s',markersize=3,linestyle='',color='blue',label='Dark Current')
+    # plt.errorbar(src[0],src[1], marker='.',linestyle='',color='blue',label='Source Current')
+    # plt.errorbar(drk[0],drk[1], marker='.',linestyle='',color='red',label='Dark Current')
+    # plt.errorbar(mscan_list[0], mscan_list[1], marker='.',linestyle='',color='black',label='Corrected Scan')
+    # plt.plot(xs,ys)
+
+    # #show line of fit range NOTE: -1 needed to prevent error sometimes?
+    # plt.axvline(start_volt,color='grey',alpha=0.3,linestyle='--')
+    # plt.axvline(end_volt,color='grey',alpha=0.3,linestyle='--')
+    
+    #Display Plateau value used to calculate gas gain
+    # plt.text(0.02, 0.98, verticalalignment='top',horizontalalignment='left', bbox=dict(facecolor='lightblue', alpha=0.5), transform=plt.gca().transAxes, s=f'PLATEAU VAL: {plateau_mean:.4f}', fontweight='bold', color='blue')
+    
+    #change scaling of plot
+    # plt.xlim(x_lower_lim, x_upper_lim)
+    # plt.ylim(y_lower_lim, y_upper_lim)
+    # plt.yscale('symlog')
+
+    ax = plt.gca()
+    ax.set_yscale('log')
+    # # ax.yaxis.set_major_formatter(mticker.FuncFormatter(sci_notation_formatter))
+    # ax.yaxis.set_major_formatter(mticker.ScalarFormatter(useMathText=True))
+    # ax.ticklabel_format(axis='y', style='sci', scilimits=(0,0))
+    lbl_fsize = 18
+    add_cms_label(plt.gcf(),ax=ax,cms_fontsize=lbl_fsize,status_fontsize=lbl_fsize,context='904 Lab',context_fontsize=lbl_fsize,gap=0.1)
+    # ax.text(0.03, 0.97, "CMS MUON", transform=ax.transAxes,
+    #     fontsize=14, fontweight='bold', ha='left', va='top')
+
+    # ax.text(0.03, 0.92, "Preliminary", transform=ax.transAxes,
+    #     fontsize=14, style='italic', ha='left', va='top')
+    
+    ax.tick_params(direction='in',which='both')
+    # ax.yaxis.offsetText.set_fontsize(12)
+    # ax.yaxis.offsetText.set_color('gray')
+    
+    #Title and label graph
+    # longS = strip.replace("S","Strip ")
+    # plt.title(f'{longS}',fontsize=14,loc='right',x=0.95)
+    # plt.title(f'{strip}, {hole.replace("_", "").replace("0","").upper()} Gas Gain',fontsize=25)
+
+    
+    plt.xlabel('High Voltage [V]',fontsize=lbl_fsize,ha='right', x=1.0)
+    plt.ylabel('I [nA]',fontsize=lbl_fsize,ha='right', y=1.0)
+    plt.legend()
+    #Display Graph for Testing
+    # plt.show()
+
+    #Save and close graph
+    # plt.tight_layout()
+    plt.savefig(f'./plots/HV_Scans/GasGain/Comp_{strip}_{tag}.png', format='png', dpi=400)
+    plt.savefig(f'./plots/HV_Scans/GasGain/Comp_{strip}_{tag}.pdf', format='pdf')
+    plt.close()
+
+def mkGasGain(mscan_list, strip, hole,tag, start_volt=3000, end_volt=3600, start_plateau=1, end_plateau=500, x_lower_lim=None, x_upper_lim=None, y_lower_lim=None, y_upper_lim=None):    
     '''
         Create figure showing GasGain. Code largely taken from mkRawFittedPlot.
 
@@ -401,22 +595,42 @@ def mkGasGain(mscan_list, strip, hole, start_volt=3000, end_volt=3600, start_pla
     plt.axvline(end_volt,color='grey',alpha=0.3,linestyle='--')
     
     #Display Plateau value used to calculate gas gain
-    plt.text(0.02, 0.98, verticalalignment='top',horizontalalignment='left', bbox=dict(facecolor='lightblue', alpha=0.5), transform=plt.gca().transAxes, s=f'PLATEAU VAL: {plateau_mean:.4f}', fontweight='bold', color='blue')
+    # plt.text(0.02, 0.98, verticalalignment='top',horizontalalignment='left', bbox=dict(facecolor='lightblue', alpha=0.5), transform=plt.gca().transAxes, s=f'PLATEAU VAL: {plateau_mean:.4f}', fontweight='bold', color='blue')
     
     #change scaling of plot
     plt.xlim(x_lower_lim, x_upper_lim)
     plt.ylim(y_lower_lim, y_upper_lim)
+
+    ax = plt.gca()
+    # ax.yaxis.set_major_formatter(mticker.FuncFormatter(sci_notation_formatter))
+    ax.yaxis.set_major_formatter(mticker.ScalarFormatter(useMathText=True))
+    ax.ticklabel_format(axis='y', style='sci', scilimits=(0,0))
+    add_cms_label(plt.gcf(),ax=ax,x_offset=0.081,gap=0.2,cms_fontsize=14,status_fontsize=14,context=strip.replace("S","Strip "),context_fontsize=14)
+    # ax.text(0.03, 0.97, "CMS MUON", transform=ax.transAxes,
+    #     fontsize=14, fontweight='bold', ha='left', va='top')
+
+    # ax.text(0.03, 0.92, "Preliminary", transform=ax.transAxes,
+    #     fontsize=14, style='italic', ha='left', va='top')
+    
+    ax.tick_params(direction='in')
+    # ax.yaxis.offsetText.set_fontsize(12)
+    # ax.yaxis.offsetText.set_color('gray')
     
     #Title and label graph
-    plt.title(f'{strip}, {hole.replace("_", "").replace("0","").upper()} Gas Gain')
-    plt.xlabel('HV (V)')
+    # longS = strip.replace("S","Strip ")
+    # plt.title(f'{longS}',fontsize=14,loc='right',x=0.95)
+    # plt.title(f'{strip}, {hole.replace("_", "").replace("0","").upper()} Gas Gain',fontsize=25)
 
-    plt.ylabel('Gas Gain')
+    
+    lbl_fsize = 14
+    plt.xlabel('High Voltage [V]',fontsize=lbl_fsize)
+    plt.ylabel('Gas Gain',fontsize=lbl_fsize)
     #Display Graph for Testing
-    plt.show()
+    # plt.show()
 
     #Save and close graph
-    #plt.savefig(f'./plots/HV_Scans/GasGain/Graphs/{strip}.png', format='png', dpi=400)
+    # plt.tight_layout()
+    plt.savefig(f'./plots/HV_Scans/GasGain/{strip}_{tag}.png', format='png', dpi=400)
     plt.close()
     
 def mkRawFittedPlot(mscan_list, strip, start_volt=3000, end_volt=3550):
@@ -564,32 +778,54 @@ def mkSpaceChargePlot(mscan_list, strip, start_volt=3000, end_volt=3600):
             strip: which strip is being irradiated, for graph labeling
     '''
 
-    fig, (ax0, ax1) = plt.subplots(2, 1, gridspec_kw={'height_ratios': [4, 3]}, sharex=True)
+    fig, (ax0, ax1) = plt.subplots(2, 1, gridspec_kw={'height_ratios': [4, 2]}, sharex=True)
     fig.subplots_adjust(hspace=0)
+    lbl_fsize = 18
+
+    # Getting plateau value
+    plateau_mean,plat_uncert = getPlateauMean(mscan_list, 1, 500)
+
+    rel_raw = (mscan_list[2] / mscan_list[1])**2 + (plat_uncert / plateau_mean)**2
+    ggVals = mscan_list[1] / plateau_mean
+    ggUncert = ggVals * np.sqrt(rel_raw)
+
+    mscan_list[1] = ggVals
+    mscan_list[2] = ggUncert
 
     mask_lower = (mscan_list[0] >= start_volt)
     mask_upper = (mscan_list[0] <= end_volt)
 
     p1 = getCurveParams(mscan_list, (mask_lower * mask_upper),)
 
-    xs = np.linspace(3000, 3850, 1500)
+    xs = np.linspace(start_volt, 3850, 1500)
     ys = mExp(xs, p1[0], p1[1])
      
     #TODO: Figure out how to access the beginning of the mask but not cutoff(chatgpt)
     print('\tCreating Space Charge evaluation')
-    ax0.errorbar(mscan_list[0][mask_lower],mscan_list[1][mask_lower],yerr=mscan_list[2][mask_lower],marker='.',linestyle='')
-    ax0.plot(xs,ys)
-    ax0.set_yscale('symlog')
-    ax0.set_title(f'{strip} Strip Current over HV Scan')
-    ax0.set_ylabel('Avg. I (nA)')
+    ax0.errorbar(mscan_list[0][mask_lower],mscan_list[1][mask_lower],yerr=mscan_list[2][mask_lower],marker='.',linestyle='',label='Data')
+    ax0.plot(xs,ys,label='Exponential Fit')
+    ax0.set_yscale('log')
+    # ax0.set_title(f'{strip} Strip Current over HV Scan')
+    ax0.set_ylabel('Gas Gain',fontsize=lbl_fsize,ha='right',y=1.0)
+    ax0.tick_params(direction='in',which='both')
+    ax0.legend(loc='upper left')
+
+    add_cms_label(fig,ax=ax0,cms_fontsize=lbl_fsize,status_fontsize=lbl_fsize,context_fontsize=lbl_fsize,context='904 Lab',gap=0.1)
+    ax0.text(3350,100000,'Fit Region',color='grey',fontsize=12)
+    # ax0.text(0.03, 0.97, "CMS MUON", transform=ax0.transAxes,
+    #     fontsize=12, fontweight='bold', ha='left', va='top')
+
+    # ax0.text(0.03, 0.90, "Preliminary", transform=ax0.transAxes,
+    #     fontsize=10, style='italic', ha='left', va='top')
 
     yexpect = mExp(mscan_list[0][mask_lower],p1[0],p1[1])
     diff = yexpect - mscan_list[1][mask_lower]
     rel_diff = diff / mscan_list[1][mask_lower]
 
     ax1.plot(mscan_list[0][mask_lower],rel_diff)
-    ax1.set_xlabel('HV (V)')
-    ax1.set_ylabel('(Exp-Data)/Data')
+    ax1.set_xlabel('High Voltage [V]',fontsize=lbl_fsize,ha='right',x=1.0)
+    ax1.set_ylabel('Rel. Diff.',fontsize=lbl_fsize,ha='right',y=1.0)
+    ax1.tick_params(direction='in')
 
     ax0.axvline(start_volt,color='grey',alpha=0.3,linestyle='--')
     ax0.axvline(end_volt,color='grey',alpha=0.3,linestyle='--')
@@ -597,11 +833,12 @@ def mkSpaceChargePlot(mscan_list, strip, start_volt=3000, end_volt=3600):
     ax1.axvline(end_volt,color='grey',alpha=0.3,linestyle='--')
     ax1.axhline(0,color='black',alpha=0.5,linestyle=':')
 
-    plt.show()
-    #plt.savefig(f'./plots/HV_Scans/{strip}_SpaceCharge.png',format='png',dpi=400)
+    # plt.show()
+    plt.savefig(f'./plots/HV_Scans/SpaceCharge/{strip}_SpaceCharge.png',format='png',dpi=400)
+    plt.savefig(f'./plots/HV_Scans/SpaceCharge/{strip}_SpaceCharge.pdf',format='pdf')
     plt.close()
 
-def mkGasGainTable(array_mscan_list, table_hole, table_strip):
+def mkGasGainTable(array_mscan_list, table_hole, table_strip,label):
     '''
         Creates a table of values to show gas gain across different runs.
        
@@ -672,10 +909,10 @@ def mkGasGainTable(array_mscan_list, table_hole, table_strip):
     
 
     #show table for testing
-    plt.show()
+    # plt.show()
     
     #Save and close table
-    #plt.savefig(f'./plots/HV_Scans/GasGain/Tables/GasGain_refMeasures.png',format='png',dpi=400)
+    plt.savefig(f'./plots/HV_Scans/GasGain/Tables/GasGain_{label}.png',format='png',dpi=400)
     plt.close()
 
 
@@ -749,13 +986,15 @@ def current_vs_time(start_date, end_date, timestamps, imon_values):
     plt.xlabel("Time (Days)")
     plt.ylabel("IMon (μA)")
     #plt.grid(True)
-    plt.xticks(rotation=45)
+    plt.xticks(rotation=25)
     plt.ylim(0, top_limit)
     plt.tight_layout()
-    plt.legend()
+    # plt.legend()
 
     # Show plot
-    plt.show()
+    # plt.show()
+    plt.savefig(f'./plots/accCharge/IMon/{start_date.replace('-','')}_{end_date.replace("-","")}_IMon.png', format='png', dpi=400)
+    plt.close()
 
 def accCharge_vs_time(start_date, end_date, timestamps, accumulated_charge):
     ''' plots the accumulated charge over a specified amount of time '''
@@ -774,22 +1013,22 @@ def accCharge_vs_time(start_date, end_date, timestamps, accumulated_charge):
 
     # Customize the plot
     plt.title(f"Accumulated Charge from ({start_date} to {end_date})")
-    plt.text(0.20, 0.94, f'Max Accumulated Charge Reached: {max_acc_charge:.2f}',
-         horizontalalignment='center',
-         verticalalignment='center',
-         transform=plt.gca().transAxes,
-         fontsize=8,
-         bbox=dict(facecolor='white', alpha=0.5))
+    plt.text(0.03, 0.93, f'Accumulated {max_acc_charge:.2f} mC/cm',
+        transform=plt.gca().transAxes,
+        fontsize=8,
+        bbox=dict(facecolor='white', alpha=0.5))
     plt.xlabel("Time (Days)")
     plt.ylabel("Accumulated Charge (mC/cm)")
     #plt.grid(True)
-    plt.xticks(rotation=45)
+    plt.xticks(rotation=25)
     plt.ylim(0, top_limit)
     plt.tight_layout()
-    plt.legend()
+    # plt.legend()
 
     # Show plot
-    plt.show()
+    # plt.show()
+    plt.savefig(f'./plots/accCharge/IMon/{start_date.replace("-","")}_{end_date.replace("-","")}_AccumulatedCharge.png', format='png', dpi=400)
+    plt.close()
 
 def accCharge_per_day(start_date, end_date, timestamps, accumulated_charge):
     ''' creates a table with the charge accumulated per day '''
@@ -826,9 +1065,14 @@ def getPlateauMean(mscan_list, start_range = 0, end_range = 500):
 
     mask_plateau = (mscan_list[0] > start_range) & (mscan_list[0] <= end_range)
     plateau_vals = mscan_list[1][mask_plateau]
-    plateau_mean = np.mean(plateau_vals)
+    plateau_error = mscan_list[2][mask_plateau]
+
+    wts = 1 / plateau_error**2
+
+    wtd_mean = np.sum(plateau_vals * wts) / np.sum(wts)
+    wtd_uncert = 1 / np.sqrt(np.sum(wts))
     
-    return plateau_mean
+    return wtd_mean,wtd_uncert
 
 def mruns(tmbbase,dir):
     mdir = f'{tmbbase}/{dir}'

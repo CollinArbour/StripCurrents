@@ -19,9 +19,8 @@ stripWdth = 12.7 #mm
 stripGap = 0.35 ##mm <- ME1/1 chamber TDR (ME2/1 is 0.5 mm)
 
 #NOTE: lists of different run files.comment and uncomment as needed. should be in a .data/HV_Scans folder.
-# '241001_refMeasures_S2', '241002_refMeasures_S6', '240820_refMeasures_S7', '241002_refMeasures_S10'
-# '241014_Plateau_S2', '241014_Plateau_S6', '241015_Plateau_S10'
-run_nms = ['241014_Plateau_S2', '241014_Plateau_S6', '241015_Plateau_S10']
+run_nms = ['241001_refMeasures_S2', '241002_refMeasures_S6', '241002_refMeasures_S10'] #, '240820_refMeasures_S7'
+# run_nms = ['241014_Plateau_S2', '241014_Plateau_S6', '241015_Plateau_S10']
 
 #list for making gasGain tables
 table_data = [[], [], []]     #2d list: [[[mhvscan], [holes], [strips]]
@@ -76,22 +75,24 @@ for run_nm in run_nms:
     #Generate Raw Fitted Graph
     #hp.mkRawFittedPlot(mhvscan, strip)
 
+    # ---------------------------------------------------------------------------
+    # #Generate Gas Gain
+    # # hp.mkGasGain(mhvscan, strip, hole,tag='RefMeasures', start_volt=3250,end_volt=3550)
+    # hp.mkGasGain(mhvscan, strip, hole,tag='Plateau', start_volt=3250,end_volt=3550)
 
-    #Generate Gas Gain
-    #hp.mkGasGain(mhvscan, strip, hole, start_volt=3500)
+    # #Gather data for gas gain table making
+    # table_data[0].append(mhvscan)
+    # table_data[1].append(hole)
+    # table_data[2].append(strip)
 
-    #Gather data for gas gain table making
-    table_data[0].append(mhvscan)
-    table_data[1].append(hole)
-    table_data[2].append(strip)
+    # #make gas gain table
+    # hp.mkGasGainTable(table_data[0], table_data[1], table_data[2],label=f'plateau_{strip}')
+    # ---------------------------------------------------------------------------
 
 
 
-    #create plateau graph
-    #hp.mkPlateauPlot(mhvscan, strip, src, hole, uncorrected_curr=src_hvscan, uncorrected_dark_curr=drk_hvscan, y_upper_lim=0.0035)
+    # #create plateau graph
+    # hp.mkPlateauPlot(mhvscan, strip, src, hole, uncorrected_curr=src_hvscan, uncorrected_dark_curr=drk_hvscan, y_upper_lim=0.0035)
 
     #create space charge plot
-    #hp.mkSpaceChargePlot(mhvscan, strip, start_volt=3400, end_volt=3600)
-
-#make gas gain table
-hp.mkGasGainTable(table_data[0], table_data[1], table_data[2])
+    hp.mkSpaceChargePlot(mhvscan, strip, start_volt=3300, end_volt=3500)
