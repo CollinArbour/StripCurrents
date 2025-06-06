@@ -3,14 +3,14 @@
 import os
 import uproot
 import argparse
-from scipy.stats import norm
+from scipy.stats import stats,norm
 from scipy.optimize import curve_fit
 import numpy as np
 import matplotlib.pyplot as plt
 import mplhep as hep
 #hep.style.use("CMS")
 
-_allDays = ['20240827_dyn_recup_CF4',
+_allDays = ['20240827_dyn_recupCF4',
         '20241025_dyn_recupCF4',
         '20241031_dyn_recupCF4',
         '20241121_dyn_recupCF4',
@@ -138,6 +138,9 @@ for day in days:
         p0 = [1,mu,sig]
         p1,cov = curve_fit(mGauss,toFit[1],toFit[0],p0=p0)
 
+        ycheck = mGauss(toFit[1],*p1)
+        chi2,pval = stats.chisquare(toFit[0],ycheck)
+
         xs = np.linspace(fitRegion[0],fitRegion[1],1000)
         ys = mGauss(xs,*p1) * 32 * fitCount
 
@@ -152,6 +155,8 @@ for day in days:
             fl.write(f'Sigma:\t\t {p1[2]}' + '\n')
             fl.write(f'Peak Value:\t {p1[0]}' + '\n')
             fl.write(f'Std Error:\t {p1[2]/np.sqrt(fitCount)}' + '\n')
+            fl.write(f'Chi Squared: {chi2}'+ '\n')
+            fl.write(f'ndof: {len(mpdf)-len(p1)}' + '\n')
 
         # Plot the graph and save it
         hep.histplot(rbdspec,color='grey',label='Raw Spectrum',alpha=0.8)

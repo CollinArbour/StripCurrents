@@ -74,7 +74,7 @@ class DataRun:
         self.avgCur = np.average(self.vals)
         self.stdCur = np.std(self.vals)
         self.nPoints = len(self.vals)
-        self.avgStdErr = np.abs(self.avgCur/np.sqrt(self.nPoints))
+        self.avgStdErr = self.stdCur/np.sqrt(self.nPoints)
         
     def removeOutliers(self,xIQR=1.5):
         '''

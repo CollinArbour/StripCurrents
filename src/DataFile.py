@@ -165,19 +165,23 @@ class DataFile:
 
         return np.array(hvs),np.array(avgI),np.array(stderr)
 
-    def getStripScan(self):
+    def getStripScan(self,src=True):
         '''
         Returns three arrays of strips, avg current, and standard error
         '''
-        if self.srcRuns is None:
+        if src and self.srcRuns is None:
             print('No runs with source recorded')
+            return
+        if not src and self.darkRuns is None:
+            print('No dark runs recorded')
             return
         
         strips = []
         avgI = []
         stderr = [] 
 
-        for run in self.srcRuns:
+        to_process = self.srcRuns if src else self.darkRuns
+        for run in to_process:
             strips.append(run.getStrip())
             avgI.append(run.getAvgCur())
             stderr.append(run.getAvgStdErr())

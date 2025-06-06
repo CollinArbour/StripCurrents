@@ -1,4 +1,4 @@
-void fitSimpleGauss(const char* day, int hv, int hole, int rebinFactor) {
+void fitPeaksGG(const char* day, int hv, int hole, int rebinFactor) {
     gROOT->SetBatch(true);
     gStyle->SetOptStat(1111);
     gStyle->SetOptFit(1111);
@@ -16,12 +16,12 @@ void fitSimpleGauss(const char* day, int hv, int hole, int rebinFactor) {
     TString srcTMBFile = srcPath + "/TMB_Rate.txt";
     TString drkTMBFile = drkPath + "/TMB_Rate.txt";
 
-    TString outDir = base + day + "/fitPlots";
+    TString outDir = base + day + "/fitPlots/TwoGauss";
     gSystem->mkdir(outDir, kTRUE);  // Create directory if it doesn't exist
 
     TString outPlotName = Form("%s/%s_%s_rbf%d.png", outDir.Data(), hvStr.Data(), holeStr.Data(), rebinFactor);
 
-    // Start opening files
+    // ---------- Everything from your existing macro below here ----------
     TFile* srcFile = TFile::Open(srcFileName, "READ");
     TFile* drkFile = TFile::Open(drkFileName, "READ");
     if (!srcFile || srcFile->IsZombie() || !drkFile || drkFile->IsZombie()) {
@@ -29,7 +29,6 @@ void fitSimpleGauss(const char* day, int hv, int hole, int rebinFactor) {
         return;
     }
 
-    // Get histgrams
     TH1D* srcHistOrig = (TH1D*)srcFile->Get(histName);
     TH1D* drkHistOrig = (TH1D*)drkFile->Get(histName);
     if (!srcHistOrig || !drkHistOrig) {
@@ -37,7 +36,6 @@ void fitSimpleGauss(const char* day, int hv, int hole, int rebinFactor) {
         return;
     }
 
-    // Clone histograms (Isolate them from the files)
     TH1D* srcHist = (TH1D*)srcHistOrig->Clone("srcHistClone");
     TH1D* drkHist = (TH1D*)drkHistOrig->Clone("drkHistClone");
     srcHist->SetDirectory(0);
@@ -75,13 +73,11 @@ void fitSimpleGauss(const char* day, int hv, int hole, int rebinFactor) {
     int maxBin = correctedHist->GetMaximumBin();
     double maxBinCenter = correctedHist->GetBinCenter(maxBin);
 
-    double fitRange = 350;
-    double pta = maxBinCenter - fitRange;
-    double ptb = maxBinCenter + 1.25*fitRange;
+    double fitMin = 100;
+    double fitMax = 8000;
 
-    // Perform Simple Gaussian Fit
-    TF1* fitFunc = new TF1("fitFunc", "gaus", pta, ptb);
-    fitFunc->SetParameters(maxVal, maxBinCenter, 200);
+    TF1* fitFunc = new TF1("twoGauss", "gaus(0)+gaus(3)", fitMin, fitMax);
+    fitFunc->SetParameters(maxVal, maxBinCenter, 100, 50, 3000, 2000);
 
     int status = correctedHist->Fit(fitFunc, "RQ");
     if (status != 0) printf("❌ Fit failed with status %d\n", status);
@@ -90,6 +86,18 @@ void fitSimpleGauss(const char* day, int hv, int hole, int rebinFactor) {
     TCanvas* c = new TCanvas("cFit", "Fit Canvas", 800, 600);
     correctedHist->Draw("HIST");
     fitFunc->Draw("same");
+
+    TF1* gaus0 = new TF1("g0", "gaus(0)", fitMin, fitMax);
+    gaus0->SetParameters(fitFunc->GetParameter(0), fitFunc->GetParameter(1), fitFunc->GetParameter(2));
+    gaus0->SetLineColor(kRed);
+    gaus0->SetLineStyle(2);
+    gaus0->Draw("same");
+
+    TF1* gaus1 = new TF1("g1", "gaus(0)", fitMin, fitMax);
+    gaus1->SetParameters(fitFunc->GetParameter(3), fitFunc->GetParameter(4), fitFunc->GetParameter(5));
+    gaus1->SetLineColor(kBlue);
+    gaus1->SetLineStyle(2);
+    gaus1->Draw("same");
 
     c->SaveAs(outPlotName);
     printf("📦 Output saved: %s\n", outPlotName.Data());
@@ -104,6 +112,9 @@ void fitSimpleGauss(const char* day, int hv, int hole, int rebinFactor) {
         outFile << Form("Amplitude (p0) = %.4f\n", fitFunc->GetParameter(0));
         outFile << Form("Mean      (p1) = %.4f\n", fitFunc->GetParameter(1));
         outFile << Form("Sigma     (p2) = %.4f\n", fitFunc->GetParameter(2));
+        outFile << Form("Amplitude (p3) = %.4f\n", fitFunc->GetParameter(3));
+        outFile << Form("Mean      (p4) = %.4f\n", fitFunc->GetParameter(4));
+        outFile << Form("Sigma     (p5) = %.4f\n", fitFunc->GetParameter(5));
         outFile << Form("Chi2             = %.4f\n", fitFunc->GetChisquare());
         outFile << Form("NDF              = %d\n", fitFunc->GetNDF());
         outFile << Form("Chi2/NDF         = %.4f\n", fitFunc->GetChisquare() / fitFunc->GetNDF());
@@ -116,6 +127,8 @@ void fitSimpleGauss(const char* day, int hv, int hole, int rebinFactor) {
 
     delete c;
     delete fitFunc;
+    delete gaus0;
+    delete gaus1;
     delete srcHist;
     delete drkHist;
     delete correctedHist;

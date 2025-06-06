@@ -20,6 +20,7 @@ void fitPeaksComplex(const char* day, int hv, int hole, int rebinFactor) {
     gSystem->mkdir(outDir, kTRUE);  // Create directory if it doesn't exist
 
     TString outPlotName = Form("%s/fit_day%s_%s_%s_rbf%d.png", outDir.Data(), day, hvStr.Data(), holeStr.Data(), rebinFactor);
+    cout << outPlotName << endl;
 
     // ---------- Everything from your existing macro below here ----------
     TFile* srcFile = TFile::Open(srcFileName, "READ");

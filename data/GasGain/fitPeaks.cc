@@ -10,7 +10,10 @@ TF1* performFit(TH1* hist, double* amp, double* mean, double* std, double start,
     TF1* fitFunc = new TF1("fitFunc", "gaus", start, end);
     fitFunc->SetParameters(*amp,*mean,*std);
 
-    hist->Fit(fitFunc,"R");
+    int status = hist->Fit(fitFunc,"R");
+    if (status != 0) printf("❌ Fit failed with status %d\n", status);
+    else printf("✅ Fit successful!\n");
+
     *amp = fitFunc->GetParameter(0);
     *mean = fitFunc->GetParameter(1);
     *std = fitFunc->GetParameter(2);
@@ -54,7 +57,7 @@ void fitPeaks(){
     double maxBinCenter = hist->GetBinCenter(maxBin);
     double std = 250.0; // Decent guess for the standard deviation
 
-    double fitRange = 500;
+    double fitRange = 350;
     double min0 = maxBinCenter - fitRange;
     double max0 = maxBinCenter + fitRange;
 
