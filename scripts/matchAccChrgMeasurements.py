@@ -3,7 +3,7 @@
 import re
 import glob
 
-accChrg_fl = './data/LogFiles/accumulatedCharge.txt'
+accChrg_fl = './data/Irradiation/accumulatedCharge.txt'
 
 measure_dir = './data/GasGain/data_processed'
 
@@ -57,7 +57,7 @@ for measure in dates:
                 print(f'\tAfter: {accChrg[i][2]}')
                 outfl.write(f'{measure:<15}{accChrg[i][4]:>12}\n')
             else:
-                print("Error!")
+                print(f'ERROR: {measure} occured during irradiation period: \n\t{accChrg[i]}')
             break
 
         # Increment only if needed

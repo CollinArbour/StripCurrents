@@ -38,8 +38,8 @@ if not logfl:
     sys.exit(f'ERROR: Configuration is unaware of any irradiation periods starting on: {args.date}')
 
 dates = re.findall(theDate,fl)
-start_date = f'20{dates[0][0]}-{dates[0][1]}-{dates[0][2]}'
-end_date = f'20{dates[1][0]}-{dates[1][1]}-{dates[1][2]}'
+start_date = f'20{'-'.join(dates[0])}'
+end_date = f'20{'-'.join(dates[1])}'
 
 print(start_date, ' to ', end_date)
 
