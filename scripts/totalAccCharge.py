@@ -6,14 +6,15 @@ import matplotlib.dates as mdates
 import helpers.accChrg as hp
 # import src.helpers as hp
 
-tag = '250808'
+tag = '250814'
 
 # Example Usage
 Period01_src1_log_files = [
     './data/LogFiles/241018_241024_CAENGECO2020.log',
     './data/LogFiles/241105_241112_CAENGECO2020.log',
     './data/LogFiles/241115_241118_CAENGECO2020.log',
-    './data/LogFiles/241121_241129_CAENGECO2020.log',
+    './data/LogFiles/241121_241122_CAENGECO2020.log',
+    './data/LogFiles/241122_241129_CAENGECO2020.log',
     './data/LogFiles/241202_241208_CAENGECO2020.log',
     './data/LogFiles/250121_250206_CAENGECO2020.log',
     './data/LogFiles/250206_250214_CAENGECO2020.log',
@@ -30,14 +31,16 @@ Period02_src3_log_files = [
     './data/LogFiles/250405_250415_CAENGECO2020.log',
     './data/LogFiles/250417_250429_CAENGECO2020.log',
     './data/LogFiles/250429_250505_CAENGECO2020.log',
-    './data/LogFiles/250505_250524_CAENGECO2020.log',
+    './data/LogFiles/250505_250516_CAENGECO2020.log',
+    './data/LogFiles/250517_250524_CAENGECO2020.log',
     './data/LogFiles/250529_250602_CAENGECO2020.log',
     './data/LogFiles/250604_250606_CAENGECO2020.log',
     './data/LogFiles/250606_250614_CAENGECO2020.log',
     './data/LogFiles/250623_250701_CAENGECO2020.log',
     './data/LogFiles/250701_250711_CAENGECO2020.log',
     './data/LogFiles/250714_250729_CAENGECO2020.log',
-    './data/LogFiles/250730_250808_CAENGECO2020.log'
+    './data/LogFiles/250730_250808_CAENGECO2020.log',
+    './data/LogFiles/250810_250814_CAENGECO2020.log'
 ]
 
 # Initialize variables
@@ -61,8 +64,8 @@ def updateLog(log,accumulated,total):
 for log in Period01_src1_log_files:
     # Parse log file
     matches = hp.parse_log(log)
-    timestamps = hp.timestamps(matches)  # Extract timestamps
-    imon_values = hp.imon_values(matches)  # Extract current (IMON) values
+    timestamps = hp.timestamps(matches[1])  # Extract timestamps
+    imon_values = hp.values(matches[1])  # Extract current (IMON) values
 
     # Calculate accumulated charge for the current file
     acc_charge = hp.accCharge_calc(timestamps, imon_values)
@@ -88,8 +91,8 @@ for log in Period01_src1_log_files:
 for log in Period02_src3_log_files:
     # Parse log file
     matches = hp.parse_log(log)
-    timestamps = hp.timestamps(matches)  # Extract timestamps
-    imon_values = hp.imon_values(matches)  # Extract current (IMON) values
+    timestamps = hp.timestamps(matches[1])  # Extract timestamps
+    imon_values = hp.values(matches[1])  # Extract current (IMON) values
 
     # Calculate accumulated charge for the current file
     acc_charge = hp.accCharge_calc(timestamps, imon_values,src='src3')
