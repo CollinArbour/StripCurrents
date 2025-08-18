@@ -4,7 +4,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
-import datetime
 import argparse
 from pathlib import Path
 
