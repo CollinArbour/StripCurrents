@@ -1,7 +1,11 @@
-void fitPeaksGG(const char* day, int hv, int hole, int rebinFactor) {
+void fitPeaksGG(TString day, int hv, int hole, int rebinFactor) {
     gROOT->SetBatch(true);
     gStyle->SetOptStat(1111);
     gStyle->SetOptFit(1111);
+
+    if (!day.EndsWith("_dyn_recupCF4")){
+        day += "_dyn_recupCF4";
+    }
 
     TString base = "./data_processed/";
     TString hvStr = Form("hv%d", hv);

@@ -1,17 +1,31 @@
-import pandas as pd
-import matplotlib.pyplot as plt
 import re
 import datetime
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 
 def parse_log(log_file):
     ''' reads and cleans data file returning '''
     with open(log_file, 'r') as file:
         log_data = file.read()
     
-    pattern = r"\[(.*?)\]:.*par \[IMonH\] val \[(.*?)\];"
-    matches = re.findall(pattern, log_data)
-    
-    return matches
+    pattern = r"\[(?P<time>.*?)\]:.*par \[(?P<label>\w+)\] val \[(?P<value>.*?)\];"
+    matches = re.finditer(pattern, log_data)
+
+    vmon = []
+    imon = []
+
+    for match in matches:
+        time = match.group('time')
+        value = match.group('value')
+
+        if match.group('label') == 'VMon':
+            vmon.append((time,value))
+        elif match.group('label') == 'IMonH':
+            imon.append((time,value))
+
+    return vmon,imon
 
 def timestamps(matches):
     ''' returnes a datatime array which contains timestamps in the format [datetime.datetime(year, month, day, hour, minute, second), datetime.datetime()...] '''
@@ -20,11 +34,16 @@ def timestamps(matches):
 
     return timestamps
 
-def imon_values(matches):
+def values(matches):
     ''' returns the CAEN current monitor readout for plotting and calculation'''
     imon_values = [float(match[1]) for match in matches]
     
     return imon_values
+
+def format_mmss(x,pos):
+    minutes = int(x//60)
+    seconds = int(x % 60)
+    return f'{minutes}:{seconds:02d}'
 
 def accCharge_calc(timestamps, imon_values, src='src1'):
     ''' calculates accumulated chrage based on timestamps and imon values given from log file '''
@@ -115,4 +134,53 @@ def accCharge_vs_time(start_date, end_date, timestamps, accumulated_charge):
     # Show plot
     # plt.show()
     plt.savefig(f'./plots/accCharge/IMon/{start_date.replace("-","")}_{end_date.replace("-","")}_AccumulatedCharge.png', format='png', dpi=400)
+    plt.close()
+
+
+def plotMalter(date,Vmon,Imon):
+    # print('hello world')
+    vtime = np.array(timestamps(Vmon))
+    vval = values(Vmon)
+    
+    itime = np.array(timestamps(Imon))
+    ival = np.array(values(Imon))
+
+
+    if vtime[0] < itime[0]:
+        offset = vtime[0]
+    else:
+        offset = itime[0]
+    
+    vtime -= offset
+    itime -= offset
+
+    vtime = [dt.total_seconds() for dt in vtime]
+    itime = [dt.total_seconds() for dt in itime]
+
+    itime=np.array(itime)
+    mask = (itime > 200) * (itime < 300)
+    print(itime[mask])
+    print(ival[mask])
+
+    fig, ax = plt.subplots()
+
+    ax.set_xlabel('Time (min)')
+    ax.set_ylabel('Vmon (V)',color='tab:blue')
+    ax.plot(vtime,vval,color='tab:blue',label='VMon')
+    ax.tick_params(axis='x',rotation=25)
+    ax.xaxis.set_major_formatter(ticker.FuncFormatter(format_mmss))
+
+    ax.tick_params(axis='y',labelcolor='tab:blue')
+    ax.ticklabel_format(axis='y',style='plain')
+
+    ax1 = ax.twinx()
+    ax1.plot(itime,ival,color='tab:red',label='IMon')
+    ax1.set_yscale('log')
+    ax1.set_ylabel(r'Imon ($\mu A$)', color='tab:red')
+    ax1.tick_params(axis='y',labelcolor='tab:red')
+
+    plt.title('Malter Current Check')
+    fig.tight_layout()
+
+    plt.savefig(f'./plots/accCharge/Malter/{date}_malter_log.png',format='png',dpi=250)
     plt.close()
