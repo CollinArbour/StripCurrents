@@ -5,8 +5,9 @@ import src.helpers as hp
 ''' designed to output all alct, clct, and tmb rates into files based on the parent folder theyre taken from'''
 
 # defines the specific TMB dump you want to process
-tmbbasedir = './data/GasGain/TMBDumps'
-run_dir = '241202_HV3400_HV3800'
+tmbbasedir = './data/GasGain/CSC_TMB_Dumps/raw'
+run_dir = '250121_HV3400_HV3800'
+#run_dir = '241202_HV3400_HV3800'
 output_file = f'./plots/TMB_Rates/{run_dir}_RATES.txt'
 
 # removes extranious files that may not be tmb dumps and returns array of files sorted into data and dark

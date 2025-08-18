@@ -19,7 +19,8 @@ stripWdth = 12.7 #mm
 stripGap = 0.35 ##mm <- ME1/1 chamber TDR (ME2/1 is 0.5 mm)
 
 #NOTE: lists of different run files.comment and uncomment as needed. should be in a .data/HV_Scans folder.
-run_nms = ['241001_refMeasures_S2', '241002_refMeasures_S6', '241002_refMeasures_S10'] #, '240820_refMeasures_S7'
+# run_nms = ['241001_refMeasures_S2', '241002_refMeasures_S6', '241002_refMeasures_S10'] #, '240820_refMeasures_S7'
+run_nms = ['250619_S6', '250619_S10']
 # run_nms = ['241014_Plateau_S2', '241014_Plateau_S6', '241015_Plateau_S10']
 
 #list for making gasGain tables
@@ -95,4 +96,4 @@ for run_nm in run_nms:
     # hp.mkPlateauPlot(mhvscan, strip, src, hole, uncorrected_curr=src_hvscan, uncorrected_dark_curr=drk_hvscan, y_upper_lim=0.0035)
 
     #create space charge plot
-    hp.mkSpaceChargePlot(mhvscan, strip, start_volt=3300, end_volt=3500)
+    hp.mkSpaceChargePlot(mhvscan, strip, '250619', start_volt=3300, end_volt=3500)
