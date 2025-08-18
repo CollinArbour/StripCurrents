@@ -1,9 +1,8 @@
+.vscode/
 *ipynb
 *.DS_Store
 *.swp
-*.txt
 *.pyc
-
 *.pdf
 *.png
 *.jpeg
