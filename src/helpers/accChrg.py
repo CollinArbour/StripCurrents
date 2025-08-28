@@ -1,4 +1,5 @@
 import re
+import sys
 import datetime
 import pandas as pd
 import numpy as np
@@ -44,6 +45,14 @@ def format_mmss(x,pos):
     seconds = int(x % 60)
     return f'{minutes}:{seconds:02d}'
 
+def format_date(date):
+    if len(date) == 8:
+        theDate = re.compile(r"(?P<year>\d{4})(?P<month>\d{2})(?P<day>\d{2})")
+        if mdate := re.search(theDate,date):
+            return '-'.join(mdate.groups())
+        else:
+            sys.exit(f'ERROR with date: expected YYYYMMDD, got: {date}')
+
 def accCharge_calc(timestamps, imon_values, src='src1'):
     ''' calculates accumulated chrage based on timestamps and imon values given from log file '''
 
@@ -66,6 +75,10 @@ def accCharge_calc(timestamps, imon_values, src='src1'):
         accCharge.append(accCharge[-1] + temp_accCharge)
 
     return accCharge
+
+
+# Rething handling of these plotting functions (move to scripts? Make it deal with axis objects instead?)
+# --------------------------------------------------
 
 def current_vs_time(start_date, end_date, timestamps, imon_values):
     ''' plots the current versus time for a specified amount of time '''
@@ -91,7 +104,7 @@ def current_vs_time(start_date, end_date, timestamps, imon_values):
     plt.ylabel("IMon (μA)")
     #plt.grid(True)
     plt.xticks(rotation=25)
-    plt.ylim(0, top_limit)
+    # plt.ylim(0, top_limit)
     plt.tight_layout()
     # plt.legend()
 
@@ -126,7 +139,7 @@ def accCharge_vs_time(start_date, end_date, timestamps, accumulated_charge):
     plt.ylabel("Accumulated Charge (mC/cm)")
     #plt.grid(True)
     plt.xticks(rotation=25)
-    plt.ylim(0, top_limit)
+    # plt.ylim(0, top_limit)
     plt.tight_layout()
     # plt.legend()
 
