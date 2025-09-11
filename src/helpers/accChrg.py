@@ -63,16 +63,15 @@ def accCharge_calc(timestamps, imon_values, src='src1'):
     elif src == 'src3':
         frac = (572.54*2)/2115 / 30.48         # (I_enc * 2) / I_mon_ref for src3 / Wire Length Enclosed in 2sigma (cm)
 
-    #needed to calulate the difference in seconds between log reports
-    seconds = [
-        (timestamps[i] - timestamps[i -1]).total_seconds()
-        for i in range(1, len(timestamps))
-    ]
+    imon_values = np.array(imon_values)
+    timestamps = np.array(timestamps)
 
-    for i in range(len(seconds)):
-        # I_mon (microA) / 1000 = I_mon (mA) which you use to report Accumulated Charge value
-        temp_accCharge = (imon_values[i] * frac / 1000) * seconds[i] 
-        accCharge.append(accCharge[-1] + temp_accCharge)
+    dts = timestamps[1:] - timestamps[:-1]
+    seconds = np.array([dt.total_seconds() for dt in dts])
+
+    daccChrg = imon_values[1:]/1000 * frac * seconds
+    for dac in daccChrg:
+        accCharge.append(accCharge[-1]+dac)
 
     return accCharge
 
