@@ -3,12 +3,6 @@ from pathlib import Path
 
 # Configure information for run before running
 
-# Relative Gas Gain: --------------------------------------------------
-# YYYYMMDD
-measurementDay = 20250808
-measurementPath = f'${measurementDay}_dyn_recupCF4'
-
-
 # Irradiation: --------------------------------------------------
 Period01_src1_log_files = [
     './data/Irradiation/LogFiles/241018_241024_CAENGECO2020.log',
@@ -41,13 +35,61 @@ Period02_src3_log_files = [
     './data/Irradiation/LogFiles/250701_250711_CAENGECO2020.log',
     './data/Irradiation/LogFiles/250714_250729_CAENGECO2020.log',
     './data/Irradiation/LogFiles/250730_250808_CAENGECO2020.log',
-    './data/Irradiation/LogFiles/250810_250814_CAENGECO2020.log'
+    './data/Irradiation/LogFiles/250810_250814_CAENGECO2020.log',
+    './data/Irradiation/LogFiles/250815_250821_CAENGECO2020.log'
+    'data/Irradiation/LogFiles/250821_250827_CAENGECO2020.log'
 ]
 
-# YYMMDD
-# startDay = 250730
-# stopDay = 250808
-# logfl = Path(f'./data/LogFiles/{startDay}_{stopDay}_CAENGECO2020.log')
+measurementDays = [
+        '20240827_dyn_recupCF4',
+        # '20240916_dyn_recupCF4', # No source measurements
+        '20241025_dyn_recupCF4',
+        '20241031_dyn_recupCF4',
+        '20241129_dyn_recupCF4',
+        # '20241202_dyn_recupCF4', # No source measurements
+        '20250121_dyn_recupCF4',
+        '20250206_dyn_recupCF4',
+        '20250221_dyn_recupCF4',
+        '20250312_dyn_recupCF4',
+        '20250321_dyn_recupCF4',
+        '20250327_dyn_recupCF4',
+        '20250401_dyn_recupCF4',
+        '20250415_dyn_recupCF4',
+        '20250429_dyn_recupCF4',
+        '20250505_dyn_recupCF4',
+        '20250516_dyn_recupCF4',
+        '20250606_dyn_recupCF4',
+        '20250617_dyn_recupCF4',
+        '20250701_dyn_recupCF4',
+        '20250711_dyn_recupCF4',
+        '20250729_dyn_recupCF4',
+        '20250808_dyn_recupCF4',
+        '20250814_dyn_recupCF4',
+        '20250821_dyn_recupCF4',
+        '20250827_dyn_recupCF4'
+]
+
+## Dark Rates Of Interest(OI):
+ratesOI = [
+    '0ALCT',
+    '13CLCT',
+    '32TMB'
+]
+
+
+# ------------------------------
+# Special Processing Exceptions:
+# ------------------------------
+
+# 2025-08-27
+#   Dark Rate scan was done at a different time than than the Source measurements
+#   Need to use run05_hv3600_dark.txt with Dark Rate Scan
+#   Need to use run13_hv3600_dark.txt with Processing fits
+
+
+# ----------------------------------------------------------------------------------------------------
+# TO DELETE/PRUNE:
+# ----------------------------------------------------------------------------------------------------
 
 # logflnm = '250604_250606_CAENGECO2020.log'
 logflnm = '250810_250814_CAENGECO2020.log'

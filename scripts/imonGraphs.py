@@ -20,7 +20,7 @@ theDate = re.compile(r"(?P<year>\d{2})(?P<month>\d{2})(?P<day>\d{2})")
 # Arguments ------------------------------------------------
 parser = argparse.ArgumentParser()
 
-parser.add_argument('-d','--date', type=str, required=True, help='Start date (YYMMDD) of irradiation period')
+parser.add_argument('-d','--date', type=str, required=True, help='Stop date (YYMMDD) of irradiation period')
 
 args = parser.parse_args()
 
@@ -30,14 +30,16 @@ args = parser.parse_args()
 logfl = ''
 for fl in config.Period01_src1_log_files + config.Period02_src3_log_files:
     days = re.search(irradDays,fl)
-    if days and days.group('start') == args.date:
+    # print(f'{days.group('start')}, {days.group('stop')}, {args.date}, {(days.group('stop') == args.date)}')
+    # print(f'{days.group("nstop")} == {args.date} = (days.group('stop') == args.date)')
+    if days and days.group('stop') == args.date:
         assert Path(fl).exists(), f'Missing irradiation log: {fl}'
         logfl = fl
 
 if not logfl:
-    sys.exit(f'ERROR: Configuration is unaware of any irradiation periods starting on: {args.date}')
+    sys.exit(f'ERROR: Configuration is unaware of any irradiation periods ending on: {args.date}')
 
-dates = re.findall(theDate,fl)
+dates = re.findall(theDate,logfl)
 start_date = f'20{'-'.join(dates[0])}'
 end_date = f'20{'-'.join(dates[1])}'
 
