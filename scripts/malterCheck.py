@@ -4,6 +4,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
+import pandas as pd
 import argparse
 from pathlib import Path
 
@@ -14,17 +15,13 @@ import helpers.accChrg as hp
 parser = argparse.ArgumentParser()
 
 parser.add_argument('-d','--date', type=str, required=True, help='Date (YYMMDD) of Malter current check')
+parser.add_argument('-s','--smooth', action='store_true', help='Plot a rolling average of current')
 
 
 # Functions ------------------------------------------------
-def plotMalter(date,Vmon,Imon):
-    # print('hello world')
+def plotMalter(date,Vmon,Imon,smooth=False):
     vtime = np.array(hp.timestamps(Vmon))
-    vval = hp.values(Vmon)
-    
     itime = np.array(hp.timestamps(Imon))
-    ival = np.array(hp.values(Imon))
-
 
     if vtime[0] < itime[0]:
         offset = vtime[0]
@@ -37,11 +34,17 @@ def plotMalter(date,Vmon,Imon):
     vtime = [dt.total_seconds() for dt in vtime]
     itime = [dt.total_seconds() for dt in itime]
 
+    voltage = pd.Series(data=hp.values(Vmon),index=vtime)
+    current = pd.Series(data=hp.values(Imon),index=itime)
+
+    Ismooth = current.rolling(window=10,center=True).mean()
+
     fig, ax = plt.subplots()
 
     ax.set_xlabel('Time (min)')
     ax.set_ylabel('Vmon (V)',color='tab:blue')
-    ax.plot(vtime,vval,color='tab:blue',label='VMon')
+    ax.set_ylim(0,3750)
+    ax.plot(voltage.index,voltage.values,color='tab:blue',label='VMon')
     ax.tick_params(axis='x',rotation=25)
     ax.xaxis.set_major_formatter(ticker.FuncFormatter(hp.format_mmss))
 
@@ -49,7 +52,10 @@ def plotMalter(date,Vmon,Imon):
     ax.ticklabel_format(axis='y',style='plain')
 
     ax1 = ax.twinx()
-    ax1.plot(itime,ival,color='tab:red',label='IMon')
+    if smooth:
+        ax1.plot(Ismooth.index,Ismooth.values,color='tab:red',label='IMon (smooth)')
+    else:
+        ax1.plot(current.index,current.values,color='tab:red',label='IMon')
     ax1.set_yscale('log')
     ax1.set_ylabel(r'Imon ($\mu A$)', color='tab:red')
     ax1.tick_params(axis='y',labelcolor='tab:red')
@@ -57,7 +63,11 @@ def plotMalter(date,Vmon,Imon):
     plt.title('Malter Current Check')
     fig.tight_layout()
 
-    plt.savefig(f'./plots/accCharge/Malter/{date}_malter_log.png',format='png',dpi=250)
+    outFl = f'./plots/accCharge/Malter/{date}_malter_log'
+    if smooth:
+        outFl += '_smooth'
+    
+    plt.savefig(f'{outFl}.png',format='png',dpi=250)
     plt.close()
 
 
@@ -75,4 +85,4 @@ if __name__ == '__main__':
     vmatches,imatches = hp.parse_log(MalterFile)
 
     print(f'Plotting: {MalterFile}')
-    plotMalter(args.date,vmatches,imatches)
+    plotMalter(args.date,vmatches,imatches,smooth=args.smooth)
