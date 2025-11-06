@@ -7,7 +7,7 @@ void fitPeaksGG(TString day, int hv, int hole, int rebinFactor) {
         day += "_dyn_recupCF4";
     }
 
-    TString base = "./data_processed/";
+    TString base = "./data/GasGain/data_processed/";
     TString hvStr = Form("hv%d", hv);
     TString holeStr = Form("hole%d", hole);
     TString histName = "Cathode/charge/chargeL3";

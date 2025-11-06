@@ -40,6 +40,7 @@ for i in range(len(ratio24_data)):
 
 plt.plot(acs,r24,marker='.',label='Ratio hole2/hole4')
 plt.plot(acs,r26,marker='.',label='Ratio hole2/hole6')
+plt.ylim((0.95,1.15))
 plt.xlabel('Accumulated Charge (mC/cm)')
 plt.legend()
 

@@ -1,0 +1,123 @@
+Source: \# 1
+	Beam spot Hole diameter: 	1.50 cm
+		I enclosed  : 		159.23 nA
+		I actual  : 		132.60 nA
+		Number of wires : 	5
+		Lenght of wires : 	5.23 cm
+		Accumulated Charge : 	5.26 (mC/cm) / day
+		Act. Accum. Charge : 	4.38 (mC/cm) / day
+
+	Beam spot FWHM diameter: 	2.38 cm
+		I enclosed  : 		289.77 nA
+		I actual  : 		256.78 nA
+		Number of wires : 	8
+		Lenght of wires : 	13.74 cm
+		Accumulated Charge : 	3.64 (mC/cm) / day
+		Act. Accum. Charge : 	3.23 (mC/cm) / day
+
+	Beam spot 2sig diameter: 	3.27 cm
+		I enclosed  : 		375.64 nA
+		I actual  : 		350.05 nA
+		Number of wires : 	11
+		Lenght of wires : 	26.22 cm
+		Accumulated Charge : 	2.48 (mC/cm) / day
+		Act. Accum. Charge : 	2.31 (mC/cm) / day
+
+	Beam spot 3sig diameter: 	4.91 cm
+		I enclosed  : 		450.36 nA
+		I actual  : 		433.01 nA
+		Number of wires : 	16
+		Lenght of wires : 	59.20 cm
+		Accumulated Charge : 	1.31 (mC/cm) / day
+		Act. Accum. Charge : 	1.26 (mC/cm) / day
+
+	Beam spot 5sig diameter: 	8.18 cm
+		I enclosed  : 		537.02 nA
+		I actual  : 		517.89 nA
+		Number of wires : 	26
+		Lenght of wires : 	164.55 cm
+		Accumulated Charge : 	0.56 (mC/cm) / day
+		Act. Accum. Charge : 	0.54 (mC/cm) / day
+
+Source: \# 2
+	Beam spot Hole diameter: 	1.50 cm
+		I enclosed  : 		198.43 nA
+		I actual  : 		164.44 nA
+		Number of wires : 	5
+		Lenght of wires : 	5.23 cm
+		Accumulated Charge : 	6.56 (mC/cm) / day
+		Act. Accum. Charge : 	5.43 (mC/cm) / day
+
+	Beam spot FWHM diameter: 	2.38 cm
+		I enclosed  : 		370.49 nA
+		I actual  : 		325.46 nA
+		Number of wires : 	8
+		Lenght of wires : 	13.74 cm
+		Accumulated Charge : 	4.66 (mC/cm) / day
+		Act. Accum. Charge : 	4.09 (mC/cm) / day
+
+	Beam spot 2sig diameter: 	3.41 cm
+		I enclosed  : 		506.64 nA
+		I actual  : 		470.10 nA
+		Number of wires : 	11
+		Lenght of wires : 	28.24 cm
+		Accumulated Charge : 	3.10 (mC/cm) / day
+		Act. Accum. Charge : 	2.88 (mC/cm) / day
+
+	Beam spot 3sig diameter: 	5.12 cm
+		I enclosed  : 		620.89 nA
+		I actual  : 		592.23 nA
+		Number of wires : 	17
+		Lenght of wires : 	64.24 cm
+		Accumulated Charge : 	1.67 (mC/cm) / day
+		Act. Accum. Charge : 	1.59 (mC/cm) / day
+
+	Beam spot 5sig diameter: 	8.53 cm
+		I enclosed  : 		772.32 nA
+		I actual  : 		737.35 nA
+		Number of wires : 	27
+		Lenght of wires : 	178.72 cm
+		Accumulated Charge : 	0.75 (mC/cm) / day
+		Act. Accum. Charge : 	0.71 (mC/cm) / day
+
+Source: \# 3
+	Beam spot Hole diameter: 	1.50 cm
+		I enclosed  : 		243.03 nA
+		I actual  : 		200.70 nA
+		Number of wires : 	5
+		Lenght of wires : 	5.23 cm
+		Accumulated Charge : 	8.03 (mC/cm) / day
+		Act. Accum. Charge : 	6.63 (mC/cm) / day
+
+	Beam spot FWHM diameter: 	2.38 cm
+		I enclosed  : 		461.96 nA
+		I actual  : 		403.39 nA
+		Number of wires : 	8
+		Lenght of wires : 	13.74 cm
+		Accumulated Charge : 	5.81 (mC/cm) / day
+		Act. Accum. Charge : 	5.07 (mC/cm) / day
+
+	Beam spot 2sig diameter: 	3.53 cm
+		I enclosed  : 		658.55 nA
+		I actual  : 		610.56 nA
+		Number of wires : 	12
+		Lenght of wires : 	30.48 cm
+		Accumulated Charge : 	3.73 (mC/cm) / day
+		Act. Accum. Charge : 	3.46 (mC/cm) / day
+
+	Beam spot 3sig diameter: 	5.30 cm
+		I enclosed  : 		806.99 nA
+		I actual  : 		770.73 nA
+		Number of wires : 	17
+		Lenght of wires : 	68.82 cm
+		Accumulated Charge : 	2.03 (mC/cm) / day
+		Act. Accum. Charge : 	1.94 (mC/cm) / day
+
+	Beam spot 5sig diameter: 	8.83 cm
+		I enclosed  : 		979.73 nA
+		I actual  : 		944.55 nA
+		Number of wires : 	28
+		Lenght of wires : 	191.80 cm
+		Accumulated Charge : 	0.88 (mC/cm) / day
+		Act. Accum. Charge : 	0.85 (mC/cm) / day
+

@@ -11,16 +11,19 @@ import scipy.integrate as integrate
 from scipy.optimize import curve_fit
 from itertools import zip_longest
 
-import src.DataFile as df
-import src.DataRun as dr
-import src.helpers as hp
+import helpers.DataFile as df
+import helpers.DataRun as dr
+import helpers.StripCurrent as hp
+import helpers.functions as func
+# import src.helpers as hp
 
 stripWdth = 12.7 #mm
 stripGap = 0.35 ##mm <- ME1/1 chamber TDR (ME2/1 is 0.5 mm)
 
 #NOTE: lists of different run files.comment and uncomment as needed. should be in a .data/HV_Scans folder.
 # run_nms = ['241001_refMeasures_S2', '241002_refMeasures_S6', '241002_refMeasures_S10'] #, '240820_refMeasures_S7'
-run_nms = ['250619_S6','250619_S10']
+run_nms = ['250911_S4']
+# run_nms = ['250619_S6','250619_S10']
 # run_nms = ['241014_Plateau_S2', '241014_Plateau_S6', '241015_Plateau_S10']
 # run_nms = ['250403_Plateau_S6','250404_Plateau_S10']
 
@@ -31,6 +34,7 @@ table_data = [[], [], []]     #2d list: [[[mhvscan], [holes], [strips]]
 for run_nm in run_nms:
     criteria = {'strip':int(run_nm.split('S')[-1])} 
     strip = run_nm.split("_")[-1]
+    date = run_nm.split("_")[0]
 
     # Load HV Scan with source
     print(f'Loading Data for {run_nm}')
@@ -68,7 +72,7 @@ for run_nm in run_nms:
                 ddf.describe(run=drk_run)
     
     #Holds HV, corrected Avg Current, combined stderror
-    mhvscan = [src_hvscan[0], corrected_hvscan, hp.quadSum(src_hvscan[2],drk_hvscan[2])]
+    mhvscan = [src_hvscan[0], corrected_hvscan, func.quadSum(src_hvscan[2],drk_hvscan[2])]
 
     src = sdf.getFileSrc()
     hole = sdf.getHole()
@@ -78,9 +82,8 @@ for run_nm in run_nms:
 
 
     #Generate Gas Gain
-    # hp.mkGasGain(mhvscan, strip, hole,tag='RefMeasures', start_volt=3250,end_volt=3550)
-    # hp.mkGasGain(mhvscan, strip, hole,tag='Plateau', start_volt=3250,end_volt=3550)
-    hp.mkGasGainComprehensive(src_hvscan,drk_hvscan,mhvscan, strip, hole,tag='250619', start_volt=3250,end_volt=3550)
+    hp.mkGasGain(mhvscan,strip,hole,tag=date,start_volt=3250,end_volt=3550)
+    hp.mkGasGainComprehensive(src_hvscan,drk_hvscan,mhvscan, strip, hole,tag=date, start_volt=3250,end_volt=3550)
 
     #Gather data for gas gain table making
     # table_data[0].append(mhvscan)
