@@ -119,7 +119,7 @@ plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))  # Date fo
 plt.gca().xaxis.set_major_locator(mdates.DayLocator(interval=7))  # Tick every day
 
 # Rotate x-axis labels for better readability
-plt.gcf().autofmt_xdate()
+plt.gcf().autofmt_xdate(rotation=50)
 
 # Set labels, title, and grid
 plt.xlabel('Time (Days)')

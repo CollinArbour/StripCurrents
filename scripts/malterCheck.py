@@ -9,17 +9,18 @@ import argparse
 from pathlib import Path
 
 import helpers.accChrg as hp
-# from load_config import config
+from load_config import config
 
 # Arguments ------------------------------------------------
 parser = argparse.ArgumentParser()
 
-parser.add_argument('-d','--date', type=str, required=True, help='Date (YYMMDD) of Malter current check')
+parser.add_argument('-d','--date', type=str, help='Date (YYMMDD) of Malter current check')
 parser.add_argument('-s','--smooth', action='store_true', help='Plot a rolling average of current')
+parser.add_argument('-a','--all', action='store_true', help='Plot all Malter checks on the same plot')
 
 
 # Functions ------------------------------------------------
-def plotMalter(date,Vmon,Imon,smooth=False):
+def processMalter(Vmon,Imon):
     vtime = np.array(hp.timestamps(Vmon))
     itime = np.array(hp.timestamps(Imon))
 
@@ -27,7 +28,7 @@ def plotMalter(date,Vmon,Imon,smooth=False):
         offset = vtime[0]
     else:
         offset = itime[0]
-    
+
     vtime -= offset
     itime -= offset
 
@@ -38,6 +39,12 @@ def plotMalter(date,Vmon,Imon,smooth=False):
     current = pd.Series(data=hp.values(Imon),index=itime)
 
     Ismooth = current.rolling(window=10,center=True).mean()
+
+    return voltage, current, Ismooth
+
+
+def plotMalter(date,Vmon,Imon,smooth=False):
+    voltage, current, Ismooth = processMalter(Vmon,Imon)
 
     fig, ax = plt.subplots()
 
@@ -70,19 +77,55 @@ def plotMalter(date,Vmon,Imon,smooth=False):
     plt.savefig(f'{outFl}.png',format='png',dpi=250)
     plt.close()
 
+def plotAllMalter(smooth=False):
+    mbase = f'./data/Irradiation/MalterCurrents'
+
+    fig, ax = plt.subplots()
+
+    for check,accChrg in config.MalterChecks:
+        MalterFile = Path(f'{mbase}/{check}')
+        assert MalterFile.exists(), f'Missing path: {MalterFile}'
+        print(f'Processing: {check}')
+
+        vmatches ,imatches = hp.parse_log(MalterFile)
+        _ , current, Ismooth = processMalter(vmatches,imatches)
+
+        if smooth:
+            to_plot=Ismooth
+            outFl = 'allMalterChecks_smooth'
+        else:
+            to_plot=current
+            outFl = 'allMalterChecks'
+        
+        ax.plot(to_plot.index,to_plot.values,label=f'{accChrg} mC/cm')
+    
+    ax.tick_params(axis='x',rotation=25)
+    ax.xaxis.set_major_formatter(ticker.FuncFormatter(hp.format_mmss))
+    ax.set_xlabel('Time (min)')
+
+    ax.set_ylabel(r'Imon ($\mu A$)')
+    ax.set_yscale('log')
+
+    plt.legend(loc='upper right')
+    plt.tight_layout()
+    plt.savefig(f'./plots/accCharge/Malter/{outFl}.png',format='png',dpi=300)
 
 
 # Processing -----------------------------------------------
 if __name__ == '__main__':
     args = parser.parse_args()
 
-    MalterFile = Path(f'./data/Irradiation/MalterCurrents/{args.date}_Malter.log')
+    if args.date:
+        MalterFile = Path(f'./data/Irradiation/MalterCurrents/{args.date}_Malter.log')
 
-    # Check that file exists
-    assert MalterFile.exists(), f'Missing path: {MalterFile}'
+        # Check that file exists
+        assert MalterFile.exists(), f'Missing path: {MalterFile}'
 
-    #reads and cleans log data file using regex to only contain timestamps and imon values
-    vmatches,imatches = hp.parse_log(MalterFile)
+        #reads and cleans log data file using regex to only contain timestamps and imon values
+        vmatches,imatches = hp.parse_log(MalterFile)
 
-    print(f'Plotting: {MalterFile}')
-    plotMalter(args.date,vmatches,imatches,smooth=args.smooth)
+        print(f'Plotting: {MalterFile}')
+        plotMalter(args.date,vmatches,imatches,smooth=args.smooth)
+
+    if args.all:
+        plotAllMalter(smooth=args.smooth)
