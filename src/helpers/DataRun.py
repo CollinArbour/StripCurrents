@@ -200,7 +200,7 @@ class DataRun:
 
     
     
-    def plotDataRun(self,save=False):
+    def plotDataRun(self,save=''):
         '''
             Plots the current values over time.
 
@@ -227,5 +227,5 @@ class DataRun:
         if not save:
             plt.show()
         else:
-            plt.savefig(f'./HV_{self.hv}_S{self.strip}.png',dpi=400,format='png')
+            plt.savefig(f'{save}/{self.hv}_S{self.strip}.png',dpi=400,format='png')
         plt.close()

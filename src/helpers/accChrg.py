@@ -53,6 +53,10 @@ def format_date(date):
         else:
             sys.exit(f'ERROR with date: expected YYYYMMDD, got: {date}')
 
+def matchAccChrg(date):
+    # IMPORTANT FUNCTION TO IMPLEMENT
+    return 0
+
 def accCharge_calc(timestamps, imon_values, src='src1'):
     ''' calculates accumulated chrage based on timestamps and imon values given from log file '''
 
