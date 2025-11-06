@@ -15,8 +15,8 @@ def run_macro(args):
         "-l",
         "-b",
         "-q",
-        f'src/fitPeaksGG.C("{day}",{hv},{hole},{rebin})'
-        #f'fitSimpleGauss.C("{day}",{hv},{hole},{rebin})'
+        f'src/fitPeaksGG_simple.C("{day}",{hv},{hole},{rebin})'
+        # f'src/fitPeaksGG.C("{day}",{hv},{hole},{rebin})'
     ]
     result = subprocess.run(cmd, capture_output=True, text=True)
     return (day, hole, result.returncode, result.stdout, result.stderr)
@@ -49,7 +49,7 @@ if __name__ == "__main__":
             print(f"❌ stderr:\n{err}")
         # print(out)
     
-    fit = 'TwoGauss'
+    fit = 'TwoGauss_simple'
     hv = 3600
     rbf = 256
 
