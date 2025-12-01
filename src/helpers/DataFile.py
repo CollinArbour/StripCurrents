@@ -21,6 +21,10 @@ class DataFile:
             to_return += f'{run.getName()} '
         print(to_return)
     
+    def splitRuns(self,outDir,tag=''):
+        for run in self.dataRuns:
+            run.saveRun(outDir,tag=tag)
+    
     def getDataRuns(self):
         ''' Return the data runs '''
         return self.dataRuns
@@ -186,7 +190,7 @@ class DataFile:
             avgI.append(run.getAvgCur())
             stderr.append(run.getAvgStdErr())
 
-        return strips,avgI,stderr
+        return np.array(strips),np.array(avgI),np.array(stderr)
     
     def createDataRun(self,mMData,mData):
         '''
@@ -200,7 +204,7 @@ class DataFile:
                 This function is a helper function for parseDataFileText()
         '''
         self.run+=1
-        datRun = DataRun(f'Run0{self.run}')
+        datRun = DataRun(f'Run_{self.run}')
         datRun.processMetaData(mMData)
         datRun.processDataRun(mData)
         self.dataRuns.append(datRun)

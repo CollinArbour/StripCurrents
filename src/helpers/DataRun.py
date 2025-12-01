@@ -1,3 +1,4 @@
+from xml.dom.minidom import Attr
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -9,11 +10,13 @@ class DataRun:
     def __init__(self,name):
         self.name = name
         #defined in processMetaData()
+        self.metaRaw = None             #store raw meta data
         self.hv = None                  #high voltage
         self.src = None                 #source
         self.strip = None               #strip
         self.layer = None               #layer
         #defined in processDataRun()
+        self.dataRaw = None             #store raw data
         self.vals = None                #np array of values of current
         self.timeBins = None            #np array of estimated points in time of recorded data
         self.date = None                #date of run
@@ -137,6 +140,7 @@ class DataRun:
         Notes:
             meta-data should be properly formatted with underscores, but for now a safer more verbose processing is implemented
         '''
+        self.metaRaw = mMData       #Cache meta raw meta data
         #grabs meta data and splits it into a list
         #Ex:['L1', 'S1', 'HV_3600', 'Imon_1.2', 'src_Sr', 'h_02']
         meta = mMData[1] + ':' + mMData[2]
@@ -182,6 +186,7 @@ class DataRun:
                     -mData[1] is list of times when value is recorded
                     -mData[2] is list of actual values of current   
         '''
+        self.dataRaw = mData.T          #Cache raw data
         
         # Store Current readings
         self.vals = np.array(mData[2],dtype=float)
@@ -200,12 +205,13 @@ class DataRun:
 
     
     
-    def plotDataRun(self,save=''):
+    def plotDataRun(self,save='',tag=''):
         '''
             Plots the current values over time.
 
             Arguments:
-            @save: optional parameter to save the plot as a png within this directory
+            @save: Path to directory directory where the plot will be saved as a png
+            @tag: Text to append to auto generated plot name
 
         '''
         # Determine where to place label in plot
@@ -227,5 +233,23 @@ class DataRun:
         if not save:
             plt.show()
         else:
-            plt.savefig(f'{save}/{self.hv}_S{self.strip}.png',dpi=400,format='png')
+            attributes = [self.name,f'hv{self.hv}',f'S{self.strip}']
+            if tag:
+                attributes.append(tag)
+            
+            plt.savefig(f'{save}/{'_'.join(attributes)}.png',dpi=400,format='png')
         plt.close()
+
+    def saveRun(self,outDir,tag=''):
+        '''
+        Print run in textfile as its own DataFile
+        '''
+        attiributes = [self.name,f'hv{self.hv}',f'S{self.strip}']
+        if tag:
+            attiributes.append(tag)
+        outfl = f'{outDir}/{'_'.join(attiributes)}.txt'
+        print(f'Saving:\t{outfl}')
+
+        with open(outfl,'w') as of:
+            of.writelines('\n'.join(self.metaRaw)+'\n')
+            of.writelines('\n'.join([' '.join(line) for line in self.dataRaw]))
