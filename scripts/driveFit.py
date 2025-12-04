@@ -1,10 +1,19 @@
 #!/usr/bin/env python3
 import re
 import numpy as np
+import argparse
 import subprocess
 from concurrent.futures import ProcessPoolExecutor
 
 from load_config import config
+
+# Arguments ------------------------------------------------
+parser = argparse.ArgumentParser()
+
+parser.add_argument('-f','--fit',default='TwoGauss',help='Type of fit to perform')
+# parser.add_argument('--hv',store='hv',default=3600,help='HV point to fit over (default=3600 V)')
+# parser.add_argument('--rbf',store='rbf',default=256,help='Rebinning factor (default=256)')
+parser.add_argument('--simple', action='store_true',help='Don\'t perform background correction')
 
 def run_macro(args):
     day, hole = args
@@ -15,8 +24,8 @@ def run_macro(args):
         "-l",
         "-b",
         "-q",
-        f'src/fitPeaksGG_simple.C("{day}",{hv},{hole},{rebin})'
-        # f'src/fitPeaksGG.C("{day}",{hv},{hole},{rebin})'
+        # f'src/fitPeaksGG_simple.C("{day}",{hv},{hole},{rebin})'
+        f'src/fitPeaksGG.C("{day}",{hv},{hole},{rebin})'
     ]
     result = subprocess.run(cmd, capture_output=True, text=True)
     return (day, hole, result.returncode, result.stdout, result.stderr)
@@ -35,6 +44,12 @@ def getPeakRatios(holes,day,fit,hv,rbf):
     return num/den
 
 if __name__ == "__main__": 
+    args = parser.parse_args()
+    fit = args.fit
+
+    if args.simple:
+        fit += '_simple'
+
     holes = [2, 4, 6]
     jobs = [(day, hole) for day in config.measurementDays for hole in holes]
 
@@ -49,7 +64,8 @@ if __name__ == "__main__":
             print(f"❌ stderr:\n{err}")
         # print(out)
     
-    fit = 'TwoGauss_simple'
+    # fit = 'TwoGauss_simple'
+    # fit = 'TwoGauss'
     hv = 3600
     rbf = 256
 
