@@ -11,38 +11,58 @@ from helpers.functions import quadSum
 
 from load_config import config
 
-# Arguments ------------------------------------------------
-parser = argparse.ArgumentParser()
+# Methods to dynamically parse input --------------------------------------------
+def add_CommonArgs(parser):
+    # Files to process
+    parser.add_argument('-f','--file', type=str, help='Name of I vs t signal text file (Kiethly PicoAmmeter format), no paths or extensions')
+    parser.add_argument('-r','--reference', type=str, help='Reference text file of I vs t (Kiethly PicoAmmeter format)  e.g. 0V or Dark currents')
 
-### Strategy
-# Need to combine with HV scans
-#   Dynamically build argument parser (is this the right path? -M --mode option? )
-#   This is becuae filtering criteria changes between two cases
+    # Action flags
+    parser.add_argument('--raw', action='store_true', help='Do not process DataRuns, just use datafile as is')
+    # parser.add_argument('--unfiltered', action='store_true', help='Do not filter (sort) DataRuns, just use datafile as is')
+    parser.add_argument('--plotRuns', action='store_true', help='Plot each indvidual run as well')
+    parser.add_argument('--splitRunFile', type=str ,help='Path to dir, script creates and writes each run of data file into their own file here')
+    parser.add_argument('-v','--verbose', action='store_true', help='Verbose std output')
 
-# Files to process
-parser.add_argument('-f','--file', type=str, help='Name of I vs t signal text file (Kiethly PicoAmmeter format), no paths or extensions')
-parser.add_argument('-r','--reference', type=str, help='Reference text file of I vs t (Kiethly PicoAmmeter format)  e.g. 0V or Dark currents')
-parser.add_argument('-d','--dataDir', type=str, default='data/StripScans', help='Directory with data, if other than \"data/StripScans\" (for rapid testing)')
+    # Configuration
+    parser.add_argument('--source', type=str, help='Source used (e.g. 127Cd, or 90Sr)')
 
-# Configuration
-parser.add_argument('--hv', type=int, help='HV point to analyze (Strip scan)')
-parser.add_argument('-s','--strip', type=int, help='Strip to analyze (HV scan)')
-parser.add_argument('-c','--criteria',type=dict, help='Dictionary defining criteria for runs to process e.g.: {"hv":3600,"strips":6}')
-parser.add_argument('--source', type=str, help='Source used (e.g. 127Cd, or 90Sr)')
+    # Output configuration
+    parser.add_argument('--tag', type=str, default='', help='Tag, to append to output file name')
 
-# Action flags
-parser.add_argument('--raw', action='store_true', help='Do not process DataRuns, just use datafile as is')
-parser.add_argument('--plotRuns', action='store_true', help='Plot each indvidual run as well')
-# parser.add_argument('--noFilter',action='store_true',help='Use all runs, no filtering out any runs')
-parser.add_argument('--splitRunFile', type=str ,help='directory path to create and write each run of data file into their own file')
-parser.add_argument('-v','--verbose', action='store_true', help='Verbose std output')
+def add_stripScanParser(subparsers):
+    parser = subparsers.add_parser(
+        'StripScan',
+        help = 'Strip scan at fixed HV'
+    )
 
-parser.add_argument('--stripScan', action='store_true', help='Given an HV point, plot a strip current scan')
+    add_CommonArgs(parser)
 
-# Output configuration
-parser.add_argument('--outDir', type=str, default='plots/StripScans', help='Directory to save outputs too')
-parser.add_argument('--tag', type=str, default='', help='Tag, to append to output file name')
+    # Configuration
+    parser.add_argument('--hv', type=int, default=3600, help='HV point to analyze')
+    parser.add_argument('-d','--dataDir', type=str, default='data/StripScans', help='Directory with data, if other than \"data/StripScans\" (for rapid testing)')
+    parser.add_argument('--outDir', type=str, default='plots/StripScans', help='Directory to save outputs too (default=plots/StripScans)')
+    parser.set_defaults(
+        sort = 'strip'
+    )
 
+def add_hvScanParser(subparsers):
+    parser = subparsers.add_parser(
+        'HVScan',
+        help = 'HV scan at specific strip'
+    )
+
+    add_CommonArgs(parser)
+
+    parser.add_argument('-s','--strip', type=int, help='Strip to analyze (HV scan)')
+    parser.add_argument('-d','--dataDir', type=str, default='data/HVScans', help='Directory with data, if other than \"data/HVScans\" (for rapid testing)')
+    parser.add_argument('--outDir', type=str, default='plots/HVScans', help='Directory to save outputs too (default=plots/HVScans)')
+    parser.set_defaults(
+        sort = 'hv'
+    )
+
+# Would like to add a mode that just processes general files
+#       (general mode, e.g. for just plotting all runs or breaking apart and stitching back together runs) 
 
 # Functions -----------------------------------------------
 def openDataFiles(args):
@@ -100,41 +120,40 @@ def plotStripScan(args,dataObjects):
 
 # Running -----------------------------------------------
 def main():
+    # Parse options dynamically
+    parser = argparse.ArgumentParser()
+    subparsers = parser.add_subparsers(dest='mode', required=True)
+
+    add_stripScanParser(subparsers)
+    add_hvScanParser(subparsers)
+
     args = parser.parse_args()
 
-    # Creat DataFile objects
+
+    # Creat DataFile objects -------------------------
     dataObjects = openDataFiles(args)
 
     ## Refine configurations 
-    sort = None
-    if args.criteria:
-        # Here I would like implement an option to just give criteria that lets you just pick out a specific HV/Strip combination
-        # Since this doesn't need args.hv or args.strip I think this needs to be implemented on class side
-        # no sorting needed, just filtering (so actually ok at moment, needs class to handle multiple criteria (think it can actually))
-        criteria = args.criteria
-    elif args.hv or args.strip:
-        criteria = {}
-        if args.hv:
-            # if Doing a strip scan, you need to pick an HV point and sort across strips (to plot from strips 1->12)
-            criteria['hv'] = args.hv
-            sort = 'strip' 
-        elif args.strip:
-            # if Doing an HV scan, you need to pick a strip and sort across HV (so you plot as HV rises)
-            criteria['strip'] = args.strip
-            sort = 'hv'
-    else:
-        print('Error, you need some sort of criteria')
+    criteria = {}
+    if hasattr(args,'hv'):
+        criteria['hv'] = args.hv
+    if hasattr(args,'strip'):
+        criteria['strip'] = args.strip
+
+    if args.verbose:
+        print(f'\tCriteria: {criteria}')
     
     # Process data objects
     if not args.raw: 
         for run,datObj in dataObjects.items():
             if datObj is None:
+                print(f'No data object associated with run: {run}')
                 continue
 
             if criteria:
                 datObj.filterRuns(criteria)
-            if sort:
-                datObj.sortDataRuns(sort)
+            if args.sort:
+                datObj.sortDataRuns(args.sort)
 
             dataObjects[run] = datObj
     
@@ -158,7 +177,7 @@ def main():
                 run.plotDataRun(save=outDir,tag=args.tag)
     
 
-    if args.stripScan:
+    if args.mode == 'StripScan':
         print(f'Performing strip scan:\n\tHV: {args.hv}')
         if args.reference: print(f'\t~ Background corrected ~')
         plotStripScan(args,dataObjects)
