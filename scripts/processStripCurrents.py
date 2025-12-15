@@ -133,7 +133,7 @@ def main():
     # Creat DataFile objects -------------------------
     dataObjects = openDataFiles(args)
 
-    ## Refine configurations 
+    ## Refine configurations (decide how to filter and sort runs)
     criteria = {}
     if hasattr(args,'hv'):
         criteria['hv'] = args.hv
