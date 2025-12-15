@@ -1,6 +1,16 @@
 import re
 
 def parseRates(txtfl,toGrab):
+    '''
+    Extracts specific rate from a 10s TMB Dump
+
+    Args:
+        txtfl: Path to TMB Dump text file
+        toGrab: List of rates to extract, who's values shoudl be extracted
+    
+    Returns:
+        Dictionary with rates and their values 
+    '''
     with open(txtfl,'r') as fl:
         lines = fl.readlines()
     
