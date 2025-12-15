@@ -20,7 +20,7 @@ theDate = re.compile(r"(?P<year>\d{2})(?P<month>\d{2})(?P<day>\d{2})")
 # Arguments ------------------------------------------------
 parser = argparse.ArgumentParser()
 
-parser.add_argument('-d','--date', type=str, required=True, help='Stop date (YYMMDD) of irradiation period')
+parser.add_argument('-d','--date', type=str, help='Stop date (YYMMDD) of irradiation period')
 parser.add_argument('--noAccChrg',action='store_true',help='Don\'t plot accumulated charge vs time')
 parser.add_argument('-f','--file', type=str, help='CAEN log file to plot')
 
@@ -58,6 +58,7 @@ def main():
     if args.file:
         print('Processing general CAEN log file')
         logfl = args.file
+        start_date = end_date = None
 
 
     #reads and cleans log data file using regex to only contain timestamps and imon values
@@ -76,3 +77,7 @@ def main():
 
     ''' shows a graph of the current vs time '''
     hp.current_vs_time(start_date, end_date, timestamps, imon_values)
+
+
+if __name__ == '__main__':
+    main()

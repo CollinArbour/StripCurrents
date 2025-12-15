@@ -65,7 +65,8 @@ def accCharge_calc(timestamps, imon_values, src='src1'):
     if src == 'src1':
         frac = (350.05*2)/1200 / 26.22         # (I_enc * 2) / I_mon_ref for src1 / Wire Length Enclosed in 2sigma (cm)
     elif src == 'src3':
-        frac = (572.54*2)/2115 / 30.48         # (I_enc * 2) / I_mon_ref for src3 / Wire Length Enclosed in 2sigma (cm)
+        frac = (610.56*2)/2115 / 30.48         # (I_enc * 2) / I_mon_ref for src3 / Wire Length Enclosed in 2sigma (cm)
+        # frac = (572.54*2)/2115 / 30.48         # (I_enc * 2) / I_mon_ref for src3 / Wire Length Enclosed in 2sigma (cm)
 
     imon_values = np.array(imon_values)
     timestamps = np.array(timestamps)
@@ -79,14 +80,33 @@ def accCharge_calc(timestamps, imon_values, src='src1'):
 
     return accCharge
 
+def loadAccChrgDict():
+    accChrg_fl = 'data/GasGain/data_processed/measurement_accChrg.txt'
 
-# Rething handling of these plotting functions (move to scripts? Make it deal with axis objects instead?)
+    # Load Accumulated Charge Values
+    with open(accChrg_fl,'r') as fl:
+        accChrg_data = fl.readlines()
+
+    accChrg = {}
+    for entry in accChrg_data[1:]:
+        data = entry.split()
+        accChrg[data[0]] = float(data[1])
+
+    return accChrg
+
+# Rethinking handling of these plotting functions (move to scripts? Make it deal with axis objects instead?)
 # --------------------------------------------------
 
 def current_vs_time(start_date, end_date, timestamps, imon_values):
     ''' plots the current versus time for a specified amount of time '''
     df = pd.DataFrame({'Timestamp': timestamps, 'IMon': imon_values})
     df.set_index('Timestamp', inplace=True)
+
+    # Set date range if not provided 
+    if start_date is None:
+        start_date = df.index[0].strftime('%Y-%m-%d')
+    if end_date is None:
+        end_date = df.index[-1].strftime('%Y-%m-%d')
 
     # Filter the data based on the provided date range
     df_filtered = df[start_date:end_date]
@@ -122,10 +142,16 @@ def accCharge_vs_time(start_date, end_date, timestamps, accumulated_charge):
 
     df = pd.DataFrame({'Timestamp': timestamps, 'AccumulatedCharge': accumulated_charge})
     df.set_index('Timestamp', inplace=True)
+    df = df.sort_index()
 
     # Filter the data based on the provided date range 
-    df_filtered = df[start_date:end_date]
+    if start_date is None:
+        start_date = df.index[0].strftime('%Y-%m-%d')
+    if end_date is None:
+        end_date = df.index[-1].strftime('%Y-%m-%d')
     
+    df_filtered = df[start_date:end_date]
+
     # Plot the resampled data
     plt.plot(df_filtered.index, df_filtered['AccumulatedCharge'], label = 'Accumulated Charge (mC/cm)', marker=".", color="blue")
 
