@@ -1,12 +1,14 @@
 import re
 import sys
+from pathlib import Path
 import datetime
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import json
 
 def parse_log(log_file):
-    ''' reads and cleans data file returning '''
+    ''' reads and cleans Imon data file, returning Vmon and Imon logs '''
     with open(log_file, 'r') as file:
         log_data = file.read()
     
@@ -46,12 +48,15 @@ def format_mmss(x,pos):
     return f'{minutes}:{seconds:02d}'
 
 def format_date(date):
-    if len(date) == 8:
-        theDate = re.compile(r"(?P<year>\d{4})(?P<month>\d{2})(?P<day>\d{2})")
-        if mdate := re.search(theDate,date):
-            return '-'.join(mdate.groups())
-        else:
-            sys.exit(f'ERROR with date: expected YYYYMMDD, got: {date}')
+    theDate = re.compile(r"(?P<year>\d{4})(?P<month>\d{2})(?P<day>\d{2})")
+    smallDate = re.compile(r"(?P<year>\d{2})(?P<month>\d{2})(?P<day>\d{2})")
+    if mdate := re.search(theDate,date):
+        return '-'.join(mdate.groups())
+    elif mdate := re.search(smallDate,date):
+        y,m,d = mdate.groups()
+        return f'20{y}-{m}-{d}'
+    else:
+        sys.exit(f'ERROR with date: expected YYYYMMDD or YYMMDD, got: {date}')
 
 def matchAccChrg(date):
     # IMPORTANT FUNCTION TO IMPLEMENT
@@ -93,6 +98,54 @@ def loadAccChrgDict():
         accChrg[data[0]] = float(data[1])
 
     return accChrg
+
+# Handle Temperature and Pressure data
+# --------------------------------------------------
+def tempVal(mstr):
+    return float(mstr.split()[0])
+
+def readTemperature(csv):
+    with open(csv,'r') as fl:
+        t_df = pd.read_csv(csv)
+
+    t_df.rename({'Temperature':'Ttime','Temperature.1':'temperature'},axis='columns',inplace=True)
+
+    t_df['Ttime'] = pd.to_datetime(t_df['Ttime'])
+    # t_df.set_index('Ttime',inplace=True)
+
+    t_df['temperature'] = t_df['temperature'].apply(tempVal)
+    
+    # return t_df.sort_index()
+    return t_df.sort_values('Ttime')
+
+def readPressure(datafl):
+    ext = Path(datafl).suffix.lower()
+    if ext == '.csv':
+        p_df = pd.read_csv(datafl)
+        # with open(datafl,'r') as fl:
+        #     p_df = pd.read_csv(datafl)
+        
+        p_df.rename({'press':'pressure','time':'Ptime'},axis='columns',inplace=True)
+        p_df = p_df[['Ptime','pressure']]
+
+        p_df['Ptime'] = pd.to_datetime(p_df['Ptime'])
+        # p_df.set_index('Ptime',inplace=True)
+        
+        # return p_df.sort_index()
+        return p_df.sort_values('Ptime')
+    elif ext == '.json':
+        with open(datafl,'r') as fl:
+            layer1 = json.load(fl)
+        layer2 = json.loads(layer1['chartP'])
+        data = layer2[0]['data']
+
+        p_df = pd.DataFrame(data, columns=["timestamp_ms", "pressure"])
+        p_df["Ptime"] = pd.to_datetime(p_df["timestamp_ms"], unit="ms")
+
+        p_df = p_df[["Ptime", "pressure"]]
+
+        return p_df.sort_values('Ptime')
+
 
 # Rethinking handling of these plotting functions (move to scripts? Make it deal with axis objects instead?)
 # --------------------------------------------------
