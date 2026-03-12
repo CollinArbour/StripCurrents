@@ -25,6 +25,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-d','--date', type=str, default=None, help='Stop date (YYMMDD) of irradiation period')
 parser.add_argument('--noAccChrg',action='store_true',help='Don\'t plot accumulated charge vs time')
 parser.add_argument('-f','--file', type=str, default=None, help='CAEN log file to plot')
+parser.add_argument('-c','--channel', type=int, default=0, help='Which HV channel to read: default = 0 for irradiation')
 parser.add_argument('-o','--outfile', type=str, default=None, help='Outfile (path + ) name')
 parser.add_argument('-p','--pressure',nargs='?',const='data/Irradiation/climate/pressure.csv',default=None,help='Match and plot pressure data with imon')
 parser.add_argument('-t','--temperature',nargs='?',const='data/Irradiation/climate/temperature.csv',default=None,help='Match and plot temperature data with imon')
@@ -105,7 +106,7 @@ def main():
         start_date = end_date = None
 
     # Reads and cleans log data file using regex to only contain timestamps and imon values
-    vmatches,imatches = hp.parse_log(logfl)
+    vmatches,imatches = hp.parse_log(logfl,ch=args.channel)
 
     # Creates list of timestamps and imon values from cleaned log file
     timestamps = hp.timestamps(imatches)

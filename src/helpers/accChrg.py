@@ -7,12 +7,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 import json
 
-def parse_log(log_file):
+def parse_log(log_file,ch=0):
     ''' reads and cleans Imon data file, returning Vmon and Imon logs '''
     with open(log_file, 'r') as file:
         log_data = file.read()
     
-    pattern = r"\[(?P<time>.*?)\]:.*par \[(?P<label>\w+)\] val \[(?P<value>.*?)\];"
+    pattern = r"\[(?P<time>.*?)\]:.*ch \[(?P<channel>\d)\].*par \[(?P<label>\w+)\] val \[(?P<value>.*?)\];"
+    # pattern = r"\[(?P<time>.*?)\]:.*par \[(?P<label>\w+)\] val \[(?P<value>.*?)\];"
     matches = re.finditer(pattern, log_data)
 
     vmon = []
@@ -21,10 +22,11 @@ def parse_log(log_file):
     for match in matches:
         time = match.group('time')
         value = match.group('value')
+        channel = int(match.group('channel'))
 
-        if match.group('label') == 'VMon':
+        if match.group('label') == 'VMon' and channel == ch:
             vmon.append((time,value))
-        elif match.group('label') == 'IMonH':
+        elif match.group('label') == 'IMonH' and channel == ch:
             imon.append((time,value))
 
     return vmon,imon
