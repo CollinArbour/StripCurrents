@@ -6,7 +6,7 @@ stripWdth = 12.7 #mm
 stripGap = 0.35 ##mm <- ME1/1 chamber TDR (ME2/1 is 0.5 mm)
 
 # Configure information for run before running
-stripCriteria = {'hv':3600}
+stripCrituuuueria = {'hv':3600}
 
 # Irradiation: --------------------------------------------------
 Period01_src1_log_files = [
@@ -46,7 +46,14 @@ Period02_src3_log_files = [
     './data/Irradiation/LogFiles/250827_250905_CAENGECO2020.log',
     './data/Irradiation/LogFiles/250913_250919_CAENGECO2020.log',
     './data/Irradiation/LogFiles/250926_250930_CAENGECO2020.log',
-    './data/Irradiation/LogFiles/251004_251013_CAENGECO2020.log'
+    './data/Irradiation/LogFiles/251004_251013_CAENGECO2020.log',
+    './data/Irradiation/LogFiles/251031_251031_CAENGECO2020.log',
+    './data/Irradiation/LogFiles/251103_251110_CAENGECO2020.log',
+    './data/Irradiation/LogFiles/251111_251117_CAENGECO2020.log',
+    './data/Irradiation/LogFiles/251126_251203_CAENGECO2020.log',
+    './data/Irradiation/LogFiles/251206_251215_CAENGECO2020.log',
+    './data/Irradiation/LogFiles/260126_260202_CAENGECO2020.log',
+    './data/Irradiation/LogFiles/260205_260211_CAENGECO2020.log',
 ]
 
 measurementDays = [
@@ -81,16 +88,36 @@ measurementDays = [
     '20251003_dyn_recupCF4', 
     '20251013_dyn_recupCF4', 
     '20251030_dyn_recupCF4', 
+    '20251110_dyn_recupCF4', 
+    '20251121_dyn_recupCF4', 
+    '20251204_dyn_recupCF4', 
+    '20251216_dyn_recupCF4', 
+    '20260126_dyn_recupCF4', 
+    '20260204_dyn_recupCF4', 
+    '20260226_dyn_recupCF4', 
+
+]
+MalterChecks = [
+    ('Malter_250321.log',147.35),                                                                                                                                                                                                                                                                           
+    ('Malter_250606.log',342.26),
+    ('Malter_250729.log',446.91),
+    ('Malter_250821.log',505.16),
+    ('Malter_250923.log',567.79),
+    ('Malter_251013.log',605.09),
+    ('Malter_251110.log',626.76),
+    ('Malter_251204.log',672.63),
+    ('Malter_251216.log',708.29),
 ]
 
-MalterChecks = [
-    ('250321_Malter.log',146.60),
-    ('250606_Malter.log',329.37),
-    ('250729_Malter.log',427.50),
-    ('250919_Malter.log',540.85),
-    ('250930_Malter.log',550.69),
-    ('251013_Malter.log',575.84),
-]
+# Original Malter checks without excessive inclusion of irradiation period
+# MalterChecks = [
+#     ('250321_Malter.log',146.60),
+#     ('250606_Malter.log',329.37),
+#     ('250729_Malter.log',427.50),
+#     ('250919_Malter.log',540.85),
+#     ('250930_Malter.log',550.69),
+#     ('251013_Malter.log',575.84),
+# ]
 
 ## Dark Rates Of Interest(OI):
 ratesOI = [
