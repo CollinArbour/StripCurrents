@@ -69,7 +69,7 @@ if __name__ == "__main__":
     hv = 3600
     rbf = 256
 
-    ratios = [(2,4), (2,6)]
+    ratios = [(2,4), (2,6),(6,4)]
     relGasGain = [[] for _ in ratios]
 
     for day in config.measurementDays:

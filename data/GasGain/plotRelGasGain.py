@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 accChrg_fl = './data_processed/measurement_accChrg.txt'
 ratio24_fl = './data_processed/ratio_2_4.txt'
 ratio26_fl = './data_processed/ratio_2_6.txt'
+ratio64_fl = './data_processed/ratio_6_4.txt'
 
 # Load Accumulated Charge Values
 with open(accChrg_fl,'r') as fl:
@@ -25,10 +26,15 @@ with open(ratio26_fl,'r') as fl:
     ratio26_data = fl.readlines()
 ratio26_data = [line.split() for line in ratio26_data]
 
+with open(ratio64_fl,'r') as fl:
+    ratio64_data = fl.readlines()
+ratio64_data = [line.split() for line in ratio64_data]
+
 
 acs = []
 r24 = []
 r26 = []
+r64 = []
 
 for i in range(len(ratio24_data)):
     if ratio24_data[i][0] != ratio26_data[i][0]:
@@ -37,11 +43,15 @@ for i in range(len(ratio24_data)):
     acs.append(accChrg[ratio24_data[i][0]])
     r24.append(float(ratio24_data[i][1]))
     r26.append(float(ratio26_data[i][1]))
+    r64.append(float(ratio64_data[i][1]))
 
-plt.plot(acs,r24,marker='.',label='Ratio hole2/hole4')
-plt.plot(acs,r26,marker='.',label='Ratio hole2/hole6')
-plt.ylim((0.95,1.15))
-plt.xlabel('Accumulated Charge (mC/cm)')
+plt.plot(acs,r24,marker='.',label='Ratio hole2/hole4',color='blue')
+# plt.plot(acs,r26,marker='.',label='Ratio hole2/hole6',color='orange')
+plt.plot(acs,r64,marker='.',label='Ratio hole6/hole4',color='green')
+plt.ylim((0.91,1.05))
+lblsz=16
+plt.xlabel('Accumulated Charge [mC/cm]',fontsize=lblsz,ha='right',x=1.0)
+plt.ylabel('Ratio of Peak Positions',fontsize=lblsz,ha='right',y=1.0)
 plt.legend()
 
 plt.savefig('./data_processed/relGasGainRatios.png',format='png',dpi=300)
