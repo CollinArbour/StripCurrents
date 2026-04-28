@@ -32,6 +32,8 @@ def createRun(run_nm, criteria, src=True):
         dataObj = df.DataFile(f'{run_nm[7:]}')
         dataObj.parseDataFileText(f'./data/HV_Scans/{run_nm}.txt')
     
+    print('------ My criteria:')
+    print(criteria)
     dataObj.filterRuns(criteria)
     dataObj.sortDataRuns('hv')
 
@@ -195,6 +197,7 @@ def mkGasGain(mscan_list, strip, hole,tag, start_volt=3000, end_volt=3600, start
     print('\tCreating raw figure')
     plt.errorbar(mscan_list[0], gas_gain_list, marker='.',linestyle='')
     plt.plot(xs,ys)
+    # plt.yscale('symlog')
 
     #show line of fit range NOTE: -1 needed to prevent error sometimes?
     plt.axvline(start_volt,color='grey',alpha=0.3,linestyle='--')

@@ -42,6 +42,10 @@ def processMalter(Vmon,Imon):
 
     return voltage, current, Ismooth
 
+def findNoSource(Imon):
+    '''Finds the moment in the file where source was removed'''
+    return 0
+
 
 def plotMalter(date,Vmon,Imon,smooth=False):
     voltage, current, Ismooth = processMalter(Vmon,Imon)
@@ -51,7 +55,8 @@ def plotMalter(date,Vmon,Imon,smooth=False):
     ax.set_xlabel('Time (min)')
     ax.set_ylabel('Vmon (V)',color='tab:blue')
     ax.set_ylim(0,3750)
-    ax.plot(voltage.index,voltage.values,color='tab:blue',label='VMon')
+    ax.plot(voltage.index,voltage.values,linestyle='',marker='.',color='tab:blue',label='VMon')
+    # ax.plot(voltage.index,voltage.values,color='tab:blue',label='VMon')
     ax.tick_params(axis='x',rotation=25)
     ax.xaxis.set_major_formatter(ticker.FuncFormatter(hp.format_mmss))
 
@@ -62,7 +67,11 @@ def plotMalter(date,Vmon,Imon,smooth=False):
     if smooth:
         ax1.plot(Ismooth.index,Ismooth.values,color='tab:red',label='IMon (smooth)')
     else:
-        ax1.plot(current.index,current.values,color='tab:red',label='IMon')
+        stable = current[current.diff().abs() < 0.03]   # threshold in µA
+        ax1.plot(stable.index,stable.values,color='tab:red',label='IMon')
+        # ax1.plot(stable.index,stable.values,color='tab:red',linestyle='',marker='.',label='IMon')
+        # ax1.plot(current.index,current.values,color='tab:red',linestyle='',marker='.',label='IMon')
+        # ax1.plot(current.index,current.values,color='tab:red',label='IMon')
     ax1.set_yscale('log')
     ax1.set_ylabel(r'Imon ($\mu A$)', color='tab:red')
     ax1.tick_params(axis='y',labelcolor='tab:red')
@@ -116,7 +125,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if args.date:
-        MalterFile = Path(f'./data/Irradiation/MalterCurrents/{args.date}_Malter.log')
+        print('NOT SUPPOSED TO ENTER AT THE MOMENT (developing multi-Malter)')
+        MalterFile = Path(f'./data/Irradiation/MalterCurrents/Malter_{args.date}.log')
 
         # Check that file exists
         assert MalterFile.exists(), f'Missing path: {MalterFile}'
@@ -128,4 +138,5 @@ if __name__ == '__main__':
         plotMalter(args.date,vmatches,imatches,smooth=args.smooth)
 
     if args.all:
+        print('')
         plotAllMalter(smooth=args.smooth)

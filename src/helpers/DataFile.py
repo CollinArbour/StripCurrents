@@ -55,6 +55,7 @@ class DataFile:
             exclude = False
             for atr in use.keys():
                 if atr == 'strip':
+                    print(f'Sees Strip: {run.getStrip()}')
                     if run.getStrip() != use[atr]:
                         exclude = True
                         break
@@ -63,8 +64,10 @@ class DataFile:
                         exclude = True
                         break
             if exclude:
+                print('excluding')
                 to_exclude.append(run)
             else:
+                print('including')
                 to_keep.append(run)
         
         self.dataRuns = to_keep
@@ -137,14 +140,14 @@ class DataFile:
                 -this method was modified with the run parameter to be usable for inspecting the "MORE SIGNAL THAN ERROR" issue.
         '''
         #Create list of dataRuns to loop over, and determine whether to describe a specific run, or all of them.
-        runs_to_loop = []
-        runs_to_loop = [run] if run is not None else self.dataRuns
+        # runs_to_loop = []
+        # runs_to_loop = [run] if run is not None else self.dataRuns
         
-        #print the data file that is being described
-        print(f'\tWithin {self.name}:')
+        # #print the data file that is being described
+        # print(f'\tWithin {self.name}:')
 
         #loop through the dataRun(s) to print the data
-        for individual_run in runs_to_loop:
+        for individual_run in self.dataRuns:
             print(f'\t\tRun: {individual_run.getName()}')
             print(f'\t\t\tHV: {individual_run.getHV()} V \t Strip: {individual_run.getStrip()}')
             print(f'\t\t\tSrc: {individual_run.getSrc()} \t Hole: {individual_run.getHole()}')

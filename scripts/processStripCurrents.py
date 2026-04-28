@@ -3,6 +3,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 import argparse
+from pathlib import Path
 
 import helpers.StripCurrent as hp
 import helpers.DataFile as df
@@ -13,15 +14,16 @@ from load_config import config
 
 # Methods to dynamically parse input --------------------------------------------
 def add_CommonArgs(parser):
+    # Which miniCSC are you processing?
+    parser.add_argument('--csc', type=str, default=4, help='Which miniCSC are we processing? (e.g. for miniCSC1:  --csc 1 )')
+
     # Files to process
-    parser.add_argument('-f','--file', type=str, help='Name of I vs t signal text file (Kiethly PicoAmmeter format), no paths or extensions')
-    parser.add_argument('-r','--reference', type=str, help='Reference text file of I vs t (Kiethly PicoAmmeter format)  e.g. 0V or Dark currents')
+    parser.add_argument('-f','--file', type=str, default=None, help='Name of I vs t signal text file (Kiethly PicoAmmeter format), looks in default dataDir if only file stem given')
+    parser.add_argument('-r','--reference', type=str, default=None,help='Reference text file of I vs t (Kiethly PicoAmmeter format)  e.g. 0V or Dark currents')
 
     # Action flags
     parser.add_argument('--raw', action='store_true', help='Do not process DataRuns, just use datafile as is')
-    # parser.add_argument('--unfiltered', action='store_true', help='Do not filter (sort) DataRuns, just use datafile as is')
     parser.add_argument('--plotRuns', action='store_true', help='Plot each indvidual run as well')
-    parser.add_argument('--splitRunFile', type=str ,help='Path to dir, script creates and writes each run of data file into their own file here')
     parser.add_argument('-v','--verbose', action='store_true', help='Verbose std output')
 
     # Configuration
@@ -38,7 +40,6 @@ def add_stripScanParser(subparsers):
 
     add_CommonArgs(parser)
 
-    # Configuration
     parser.add_argument('--hv', type=int, default=3600, help='HV point to analyze')
     parser.add_argument('-d','--dataDir', type=str, default='data/StripScans', help='Directory with data, if other than \"data/StripScans\" (for rapid testing)')
     parser.add_argument('--outDir', type=str, default='plots/StripScans', help='Directory to save outputs too (default=plots/StripScans)')
@@ -61,33 +62,64 @@ def add_hvScanParser(subparsers):
         sort = 'hv'
     )
 
+def add_generalParser(subparsers):
+    parser = subparsers.add_parser(
+        'General',
+        help = 'General processing of Kiethly PicoAmmeter data'
+    )
+
+    add_CommonArgs(parser)
+
+    # Configs
+    parser.add_argument('--hv', type=int, default=3600, help='HV point to analyze')
+    parser.add_argument('-s','--strip', type=int, help='Strip to analyze (HV scan)')
+    # Paths
+    parser.add_argument('-d','--dataDir', type=str, default='data/HVScans', help='Directory with data, if other than \"data/HVScans\" (for rapid testing)')
+    parser.add_argument('--outDir', type=str, default='data/tempProcessing', help='Directory to save outputs too (default=data/tempProcessing)')
+    # Actions
+    parser.add_argument('--splitRunFile', type=str ,help='Path to dir, script creates and writes each run of data file into their own file here')
+
+
 # Would like to add a mode that just processes general files
 #       (general mode, e.g. for just plotting all runs or breaking apart and stitching back together runs) 
 
 # Functions -----------------------------------------------
+def resolvePath(args,name):
+    if name is None:
+        return None
+
+    filePath = Path(name)
+
+    # Add file extension, if there isn't one (it is acceptable to just give file stem and we'll find it general directory)
+    if not filePath.suffix:
+        filePath = filePath.with_suffix('.txt')
+
+    # If no paths were given, then we need to look in the defualt dataDir
+    if filePath.parent == Path('.'):
+        filePath = Path(args.dataDir) / filePath.name
+    
+    # Need to check file exists
+    if not filePath.exists():
+        raise FileNotFoundError(f'File not found: {filePath}')
+    
+    return filePath
+
 def openDataFiles(args):
     # Creating data files objects
     dfs = {
-        'signal': None,
-        'reference': None
+        'signal': args.file,
+        'reference': args.reference
     }
 
-    if args.file:
-        dflnm = f'{args.dataDir}/{args.file}.txt'
-        print(f'Loading signal file:\n\t{dflnm}')
-        dataObject = df.DataFile(args.file)
-        dataObject.parseDataFileText(dflnm)
-        dfs['signal'] = dataObject
-    else:
-        print(f'Error, must have signal file!')
+    for sample,name in dfs.items():
+        if name is not None:
+            flpth = resolvePath(args,name)
+            print(f'Loading {sample} file:\n\t{str(flpth)}')
 
-    if args.reference:
-        rflnm = f'{args.dataDir}/{args.reference}.txt'
-        print(f'Loading reference file:\n\t{rflnm}')
-        refObject = df.DataFile(args.reference)
-        refObject.parseDataFileText(rflnm)
-        dfs['reference'] = refObject
-    
+            dataObject = df.DataFile(flpth.stem)
+            dataObject.parseDataFileText(flpth)
+            dfs[sample] = dataObject
+
     return dfs
 
 def plotStripScan(args,dataObjects):
@@ -115,7 +147,7 @@ def plotStripScan(args,dataObjects):
     plt.xlabel('Strip Number')
     plt.ylabel('Current (nA)')
     plt.legend()
-    plt.savefig(f'{args.outDir}/{args.file}_StripScan.png',format='png',dpi=250)
+    plt.savefig(f'{args.outDir}/{Path(args.file).stem}_StripScan.png',format='png',dpi=250)
 
 
 # Running -----------------------------------------------
@@ -164,7 +196,7 @@ def main():
     ### ACTIONS     (modes if you will)
     # Plot runs if wanted:
     if args.plotRuns:
-        outDir = f'{args.outDir}/{args.file}'
+        outDir = f'{args.outDir}/{Path(args.file).stem}'
         print(f'Writing out to:\n\t{outDir}')
         os.makedirs(outDir,exist_ok=True)
 
@@ -182,6 +214,21 @@ def main():
         if args.reference: print(f'\t~ Background corrected ~')
         plotStripScan(args,dataObjects)
 
+    if args.mode == 'HVScan':
+        print(f'Performing HV scan:\n\tStrip: {args.strip}')
+        sdf = hp.createRun('miniCSC1/data/HV_Scans/20260312_L1_s8_90Sr_hole2.txt',criteria)
+        # ddf = hp.createRun('miniCSC1/data/HV_Scans/20260312_L1_s8_dark.txt',criteria)
+
+        src_hvscan = sdf.getHVScan()
+        # drk_hvscan = ddf.getHVScan(src=False)
+        src_hvscan,drk_hvscan = hp.matching(src_hvscan,drk_hvscan)
+        # corrected_hvscan = src_hvscan[1] - drk_hvscan[1]
+
+        # mhvscan = [src_hvscan[0], corrected_hvscan, func.quadSum(src_hvscan[2],drk_hvscan[2])]
+        # src = sdf.getFileSrc()
+        # hole = sdf.getHole()
+        # hp.mkGasGain(mhvscan,args.strip,hole,tag='miniCSC1',start_volt=3250,end_volt=3550)
+        # hp.mkGasGainComprehensive(src_hvscan,drk_hvscan,mhvscan, args.strip, hole,tag='MiniCSC1', start_volt=3250,end_volt=3550)
     
             
 

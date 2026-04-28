@@ -3,9 +3,11 @@
 # Imports --------------------------------------------------
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
+from datetime import datetime
 import argparse
 
 import helpers.accChrg as hp
+import helpers.plotting as plotting
 from load_config import config
 
 
@@ -105,30 +107,35 @@ print("Overall Total Charge:", overall_total_charge)
 # Plot the continuous accumulated charge
 plt.figure(figsize=(10, 6))
 plt.plot(continuous_timestamps, continuous_acc_charge, label='Accumulated Charge (mC/cm)')
+plt.axvline(datetime.fromisoformat('2025-03-17 16:50:36'), color='black', linestyle='--',alpha=0.3, label='HV Scan')
 
-# Add text in the bottom-right corner
-plt.text(0.99, 0.02, f'Max Accumulated Charge Reached: {last_accumulated_charge:.2f}',
-         horizontalalignment='right',
-         verticalalignment='bottom',
-         transform=plt.gca().transAxes,
-         fontsize=8,
-         bbox=dict(facecolor='white', alpha=0.5))
+# # Add text in the bottom-right corner
+# plt.text(0.99, 0.02, f'Max Accumulated Charge Reached: {last_accumulated_charge:.2f}',
+#          horizontalalignment='right',
+#          verticalalignment='bottom',
+#          transform=plt.gca().transAxes,
+#          fontsize=8,
+#          bbox=dict(facecolor='white', alpha=0.5))
 
 # Format x-axis for datetime values
-plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))  # Date format
-plt.gca().xaxis.set_major_locator(mdates.DayLocator(interval=7))  # Tick every day
+# plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))  # Date format
+plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%d-%b-%y'))  # Date format
+plt.gca().xaxis.set_major_locator(mdates.DayLocator(interval=45))  # Tick every day
 
 # Rotate x-axis labels for better readability
-plt.gcf().autofmt_xdate(rotation=50)
+# plt.gcf().autofmt_xdate(rotation=50)
 
 # Set labels, title, and grid
-plt.xlabel('Time (Days)')
-plt.ylabel('Accumulated Charge (mC/cm)')
-plt.title('Accumulated Charge Over Time')
+lbl_fsize = 18
+plt.xlabel('Time [Date]',fontsize=lbl_fsize,ha='right',x=1.0)
+plt.ylabel('Accumulated Charge [mC/cm]',fontsize=lbl_fsize, ha='right',y=1.0)
+# plt.title('Accumulated Charge Over Time')
 plt.tight_layout()
 plt.ylim(bottom=0)
-plt.legend()
-plt.grid(True, which='both', linestyle='-', alpha=0.8)  # Ensure both major/minor grids appear
+# plt.legend()
+plt.grid(True, which='both', linestyle='-', alpha=0.3)  # Ensure both major/minor grids appear
+
+plotting.add_cms_label(plt.gcf(),ax=plt.gca(),context='904 Lab',cms_fontsize=lbl_fsize,status_fontsize=lbl_fsize,context_fontsize=lbl_fsize,gap=0.07)
 
 # Show the plot
 #plt.show()
