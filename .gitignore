@@ -7,6 +7,10 @@
 *.pdf
 *.png
 *.jpeg
-/data/
+/data/*
+!/data/Irradiation/
+!/data/Irradiation/climate/
+!/data/Irradiation/LogFiles/
+!/data/Irradiation/MalterCurrents/
 /sandbox/
 /archive_src/
